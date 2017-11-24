@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Fluffy Player</string>
+    <string name="title_activity_file_browse">FileBrowseActivity</string>
+</resources>
