@@ -108,6 +108,11 @@ class FileBrowseActivity : AppCompatActivity() {
     }
 
     /**
+     * Whether this activity is initialized.
+     */
+    private var isInitialized = false
+
+    /**
      * A DbxProxy.
      */
     private lateinit var dbxProxy: DbxProxy
@@ -121,10 +126,22 @@ class FileBrowseActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_file_browse)
 
-        // auth
+        if (DbxProxy.isAuthenticated(this)) {
+            initialize()
+        }
         DbxProxy.auth(this)
-        dbxProxy = DbxProxy.create(this)
+    }
 
+    override fun onResume() {
+        super.onResume()
+
+        if (DbxProxy.isAuthenticated(this) && !isInitialized) {
+            initialize()
+        }
+    }
+
+    private fun initialize() {
+        dbxProxy = DbxProxy.create(this)
         val filesListView = findViewById<ListView>(R.id.filesListView)
 
         // listViewAdapter
@@ -165,6 +182,8 @@ class FileBrowseActivity : AppCompatActivity() {
                 this.onListViewItemClick(metadata)
             }
         }
+
+        isInitialized = true
     }
 
     /**

@@ -28,6 +28,11 @@ internal class DbxProxy(private val accessToken: String) {
         }
 
         /**
+         * Returns whether the authentication is finished.
+         */
+        internal fun isAuthenticated(ctx: Context): Boolean = !getAccessToken(ctx).isNullOrEmpty()
+
+        /**
          * Returns a DbxProxy instance.
          */
         internal fun create(ctx: Context): DbxProxy = DbxProxy(getAccessToken(ctx))
