@@ -3,17 +3,14 @@ package com.example.mmktomato.fluffyplayer
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.support.constraint.ConstraintLayout
 import android.support.v7.app.AppCompatActivity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import com.dropbox.core.v2.files.Metadata
-import com.dropbox.core.v2.files.FileMetadata
-import com.dropbox.core.v2.files.FolderMetadata
 import com.dropbox.core.v2.files.ListFolderResult
 import com.example.mmktomato.fluffyplayer.dropbox.DbxProxy
+import com.example.mmktomato.fluffyplayer.dropbox.MetadataDTO
 import kotlinx.coroutines.experimental.Deferred
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.async
@@ -70,7 +67,7 @@ class FileBrowseActivity : AppCompatActivity() {
      * @param ctx android context.
      */
     private class DbxFileAdapter(private val ctx: Context) : BaseAdapter() {
-        private val items = mutableListOf<Metadata>()
+        private val items = mutableListOf<MetadataDTO>()
         private val inflater = LayoutInflater.from(ctx)
 
         override fun getCount(): Int = items.size
@@ -101,7 +98,7 @@ class FileBrowseActivity : AppCompatActivity() {
          *
          * @param list items to add.
          */
-        internal fun addItems(list: List<Metadata>) {
+        internal fun addItems(list: List<MetadataDTO>) {
             items.addAll(list)
             this.notifyDataSetChanged()
         }
@@ -164,7 +161,7 @@ class FileBrowseActivity : AppCompatActivity() {
                 lastResult = res
 
                 // add
-                listViewAdapter.addItems(res.entries)
+                listViewAdapter.addItems(res.entries.map { metadata -> MetadataDTO.createFrom(metadata) })
 
                 if (!res.hasMore) {
                     filesListView.removeFooterView(progressBar)
@@ -176,9 +173,9 @@ class FileBrowseActivity : AppCompatActivity() {
 
         // on item click
         filesListView.setOnItemClickListener { parent, view, position, id ->
-            val metadata = lastResult?.entries?.get(position)
+            val metadata = listViewAdapter.getItem(position)
 
-            if (metadata != null) {
+            if (metadata is MetadataDTO) {
                 this.onListViewItemClick(metadata)
             }
         }
@@ -191,18 +188,16 @@ class FileBrowseActivity : AppCompatActivity() {
      *
      * @param metadata the tapped metadata.
      */
-    private fun onListViewItemClick(metadata: Metadata) {
-        when (metadata) {
-            is FileMetadata -> {
-                val intent = Intent(this, PlayerActivity::class.java)
-                intent.putExtra("fileName", metadata.name)
-                this.startActivity(intent)
-            }
-            is FolderMetadata -> {
-                val intent = Intent(this, FileBrowseActivity::class.java)
-                intent.putExtra("path", metadata.pathLower)
-                this.startActivity(intent)
-            }
+    private fun onListViewItemClick(metadata: MetadataDTO) {
+        if (metadata.isFile) {
+            val intent = Intent(this, PlayerActivity::class.java)
+            intent.putExtra("metadata", metadata)
+            startActivity(intent)
+        }
+        else {
+            val intent = Intent(this, FileBrowseActivity::class.java)
+            intent.putExtra("path", metadata.path)
+            startActivity(intent)
         }
     }
 }
