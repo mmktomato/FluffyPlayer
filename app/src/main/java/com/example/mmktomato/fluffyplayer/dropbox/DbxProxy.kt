@@ -97,4 +97,14 @@ internal class DbxProxy(private val accessToken: String) {
             return@async client.files().listFolderContinue(prevRes.cursor)
         }
     }
+
+    /**
+     * Returns the temporary link of file.
+     *
+     * @param path the file path.
+     * @return the temporary link.
+     */
+    fun getTemporaryLink(path: String) = async(CommonPool) {
+        return@async client.files().getTemporaryLink(path).link
+    }
 }
