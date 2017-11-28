@@ -90,6 +90,9 @@ class FileBrowseActivity : AppCompatActivity() {
             val fileNameTextView = ret.findViewById<TextView>(R.id.fileNameTextView)
             fileNameTextView.text = item.name
 
+            val folderImageView = ret.findViewById<ImageView>(R.id.folderImageView)
+            folderImageView.visibility = if (item.isFile) View.INVISIBLE else View.VISIBLE
+
             return ret
         }
 
