@@ -164,7 +164,9 @@ class FileBrowseActivity : AppCompatActivity() {
                 lastResult = res
 
                 // add
-                listViewAdapter.addItems(res.entries.map { metadata -> MetadataDTO.createFrom(metadata) })
+                listViewAdapter.addItems(res.entries
+                        .map { MetadataDTO.createFrom(it) }
+                        .filter { !it.isFile || (it.isFile && isMusicFile(it.name)) })
 
                 if (!res.hasMore) {
                     filesListView.removeFooterView(progressBar)
@@ -202,5 +204,15 @@ class FileBrowseActivity : AppCompatActivity() {
             intent.putExtra("path", metadata.path)
             startActivity(intent)
         }
+    }
+
+    /**
+     * Returns whether `fileName` is a music file.
+     *
+     * @param fileName a file name.
+     */
+    private fun isMusicFile(fileName: String): Boolean {
+        val extensions = listOf(".wav", ".m4a", ".mp3", ".flac", ".ogg")
+        return extensions.any { fileName.toLowerCase().endsWith(it) }
     }
 }
