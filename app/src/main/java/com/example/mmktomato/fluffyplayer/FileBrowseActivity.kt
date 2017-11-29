@@ -178,6 +178,10 @@ class FileBrowseActivity : AppCompatActivity() {
 
         // on item click
         filesListView.setOnItemClickListener { parent, view, position, id ->
+            if (view.id != R.id.dbxFileListItem) {
+                return@setOnItemClickListener
+            }
+
             val metadata = listViewAdapter.getItem(position)
 
             if (metadata is MetadataDTO) {
