@@ -4,6 +4,8 @@ apply plugin: 'kotlin-android'
 
 apply plugin: 'kotlin-android-extensions'
 
+apply plugin: 'kotlin-kapt'
+
 android {
     compileSdkVersion 26
     defaultConfig {
@@ -25,6 +27,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    dataBinding {
+        enabled = true
+    }
 }
 
 dependencies {
@@ -39,4 +44,5 @@ dependencies {
     compile 'com.dropbox.core:dropbox-core-sdk:3.0.5'
     compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.19.3'
     compile 'org.jetbrains.kotlinx:kotlinx-coroutines-android:0.19.3'
+    kapt 'com.android.databinding:compiler:2.3.3'
 }
