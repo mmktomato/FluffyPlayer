@@ -15,8 +15,74 @@ import com.example.mmktomato.fluffyplayer.prefs.AppPrefs
 internal class PlayerService : Service() {
     /**
      * A binder to communicate this service.
+     *
+     * @param player a media player.
      */
-    internal class LocalBinder(internal val service: PlayerService) : Binder()
+    internal class LocalBinder(private val player: MediaPlayer) : Binder() {
+        /**
+         * the counter of listener
+         */
+        private var listenerCounter = 0
+
+        /**
+         * the map of listeners for onPlayerStateChanged.
+         */
+        private val onPlayerStateChangedListeners = mutableMapOf<Int, (Boolean) -> Unit>()
+
+        /**
+         * Starts playing the music.
+         */
+        fun start() {
+            player.start()
+            notifyOnPlayerStateChanged()
+        }
+
+        /**
+         * Pauses the music.
+         */
+        fun pause() {
+            player.pause()
+            notifyOnPlayerStateChanged()
+        }
+
+        /**
+         * Toggles playing state.
+         */
+        fun togglePlaying() {
+            if (player.isPlaying) {
+                pause()
+            } else {
+                start()
+            }
+        }
+
+        /**
+         * Adds listener for onPlayerStateChanged.
+         *
+         * @param listener the listener to add.
+         */
+        fun addOnPlayerStateChangedListener(listener: (Boolean) -> Unit): Int {
+            val index = ++listenerCounter
+            onPlayerStateChangedListeners.put(index, listener)
+            return index
+        }
+
+        /**
+         * Removes listener for onPlayerStateChanged.
+         *
+         * @param index the listener index.
+         */
+        fun removeOnPlayerStateChangedListener(index: Int) {
+            onPlayerStateChangedListeners.remove(index)
+        }
+
+        /**
+         * Notifies onPlayerStateChanged.
+         */
+        fun notifyOnPlayerStateChanged() {
+            onPlayerStateChangedListeners.values.forEach { it.invoke(player.isPlaying) }
+        }
+    }
 
     /**
      * the media player.
@@ -33,24 +99,24 @@ internal class PlayerService : Service() {
                 .setUsage(AudioAttributes.USAGE_MEDIA)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .build()
+        val binder = LocalBinder(player)
 
         player.setAudioAttributes(audioAttr)
         player.setDataSource(uri)
         player.setOnPreparedListener { mp ->
             // ALAC is not supported ...
-            player.start()
+            binder.start()
         }
         player.setOnErrorListener { mp, what, extra ->
             Log.e(AppPrefs.logTag, "what:$what, extra:$extra")
             return@setOnErrorListener true
         }
         player.setOnCompletionListener {
-            // TODO: fix this.
-            Log.d(AppPrefs.logTag, "done.")
+            binder.notifyOnPlayerStateChanged()
         }
         player.prepareAsync()
 
-        return LocalBinder(this)
+        return binder
     }
 
     override fun onDestroy() {
