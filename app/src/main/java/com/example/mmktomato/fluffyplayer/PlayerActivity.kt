@@ -7,15 +7,17 @@ import android.content.ServiceConnection
 import android.databinding.BaseObservable
 import android.databinding.DataBindingUtil
 import android.databinding.ObservableBoolean
+import android.databinding.ObservableField
+import android.media.MediaMetadataRetriever
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.IBinder
 import android.widget.Button
-import android.widget.TextView
 import com.example.mmktomato.fluffyplayer.databinding.ActivityPlayerBinding
 import com.example.mmktomato.fluffyplayer.dropbox.DbxProxy
 import com.example.mmktomato.fluffyplayer.dropbox.MetadataDTO
 import com.example.mmktomato.fluffyplayer.player.PlayerService
+import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.launch
 
 class PlayerActivity : AppCompatActivity() {
@@ -23,8 +25,10 @@ class PlayerActivity : AppCompatActivity() {
      * An view model class.
      *
      * @param isPlaying indicates whether the music is playing.
+     * @param title the music title.
      */
-    class ViewModel(var isPlaying: ObservableBoolean) : BaseObservable()
+    class ViewModel(val isPlaying: ObservableBoolean,
+                    val title: ObservableField<String> = ObservableField("(title)")) : BaseObservable()
 
     /**
      * Holds a service binder state.
@@ -96,16 +100,18 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         val dbxProxy = DbxProxy.create(this)
-
         val metadata = intent.getSerializableExtra("metadata") as MetadataDTO
-        val textView = findViewById<TextView>(R.id.textView)
-        textView.text = metadata.toString()
-
         val serviceIntent = Intent(this, PlayerService::class.java)
-        launch {
+
+        launch(CommonPool) {
             val temporaryLink = dbxProxy.getTemporaryLink(metadata.path).await()
             serviceIntent.putExtra("uri", temporaryLink)
             bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
+
+            val mmr = MediaMetadataRetriever()
+            mmr.setDataSource(temporaryLink, mapOf<String, String>())
+            val title = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+            viewModel.title.set(title)
         }
     }
 
