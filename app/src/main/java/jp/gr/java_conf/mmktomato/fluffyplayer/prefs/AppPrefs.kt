@@ -1,6 +1,6 @@
-package com.example.mmktomato.fluffyplayer.prefs
+package jp.gr.java_conf.mmktomato.fluffyplayer.prefs
 
-import com.example.mmktomato.fluffyplayer.R
+import jp.gr.java_conf.mmktomato.fluffyplayer.R
 
 /**
  * The Application Preferences.

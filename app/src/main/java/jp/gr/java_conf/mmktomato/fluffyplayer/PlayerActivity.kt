@@ -1,4 +1,4 @@
-package com.example.mmktomato.fluffyplayer
+package jp.gr.java_conf.mmktomato.fluffyplayer
 
 import android.content.ComponentName
 import android.content.Context
@@ -13,10 +13,10 @@ import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.IBinder
 import android.widget.Button
-import com.example.mmktomato.fluffyplayer.databinding.ActivityPlayerBinding
-import com.example.mmktomato.fluffyplayer.dropbox.DbxProxy
-import com.example.mmktomato.fluffyplayer.dropbox.MetadataDTO
-import com.example.mmktomato.fluffyplayer.player.PlayerService
+import jp.gr.java_conf.mmktomato.fluffyplayer.databinding.ActivityPlayerBinding
+import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
+import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.MetadataDTO
+import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
 import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.launch
 

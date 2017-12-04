@@ -1,4 +1,4 @@
-package com.example.mmktomato.fluffyplayer.dropbox
+package jp.gr.java_conf.mmktomato.fluffyplayer.dropbox
 
 import com.dropbox.core.v2.files.FileMetadata
 import com.dropbox.core.v2.files.Metadata
