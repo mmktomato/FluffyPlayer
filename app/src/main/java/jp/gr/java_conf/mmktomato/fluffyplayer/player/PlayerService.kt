@@ -1,4 +1,4 @@
-package com.example.mmktomato.fluffyplayer.player
+package jp.gr.java_conf.mmktomato.fluffyplayer.player
 
 import android.app.Service
 import android.content.Intent
@@ -7,7 +7,7 @@ import android.media.MediaPlayer
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
-import com.example.mmktomato.fluffyplayer.prefs.AppPrefs
+import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.AppPrefs
 
 /**
  * A music player service.

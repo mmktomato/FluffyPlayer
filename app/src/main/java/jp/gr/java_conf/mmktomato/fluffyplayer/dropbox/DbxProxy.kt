@@ -1,13 +1,13 @@
-package com.example.mmktomato.fluffyplayer.dropbox
+package jp.gr.java_conf.mmktomato.fluffyplayer.dropbox
 
 import android.content.Context
 import com.dropbox.core.DbxRequestConfig
 import com.dropbox.core.android.Auth
 import com.dropbox.core.v2.DbxClientV2
 import com.dropbox.core.v2.files.ListFolderResult
-import com.example.mmktomato.fluffyplayer.BuildConfig
-import com.example.mmktomato.fluffyplayer.prefs.AppPrefs
-import com.example.mmktomato.fluffyplayer.prefs.SharedPrefsHelper
+import jp.gr.java_conf.mmktomato.fluffyplayer.BuildConfig
+import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.AppPrefs
+import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelper
 import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.async
 

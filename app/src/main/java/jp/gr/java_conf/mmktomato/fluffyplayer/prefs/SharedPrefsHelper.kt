@@ -1,4 +1,4 @@
-package com.example.mmktomato.fluffyplayer.prefs
+package jp.gr.java_conf.mmktomato.fluffyplayer.prefs
 
 import android.content.Context
 import android.content.SharedPreferences

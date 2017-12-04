@@ -1,4 +1,4 @@
-package com.example.mmktomato.fluffyplayer
+package jp.gr.java_conf.mmktomato.fluffyplayer
 
 import android.content.Context
 import android.content.Intent
@@ -9,8 +9,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import com.dropbox.core.v2.files.ListFolderResult
-import com.example.mmktomato.fluffyplayer.dropbox.DbxProxy
-import com.example.mmktomato.fluffyplayer.dropbox.MetadataDTO
+import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
+import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.MetadataDTO
 import kotlinx.coroutines.experimental.Deferred
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.async

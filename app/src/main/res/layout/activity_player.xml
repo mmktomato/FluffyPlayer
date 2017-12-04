@@ -3,7 +3,7 @@
     <data>
         <variable
             name="viewModel"
-            type="com.example.mmktomato.fluffyplayer.PlayerActivity.ViewModel" />
+            type="jp.gr.java_conf.mmktomato.fluffyplayer.PlayerActivity.ViewModel" />
     </data>
 
     <android.support.constraint.ConstraintLayout
@@ -11,7 +11,7 @@
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context="com.example.mmktomato.fluffyplayer.PlayerActivity">
+        tools:context="jp.gr.java_conf.mmktomato.fluffyplayer.PlayerActivity">
 
         <TextView
             android:id="@+id/titleTextView"
