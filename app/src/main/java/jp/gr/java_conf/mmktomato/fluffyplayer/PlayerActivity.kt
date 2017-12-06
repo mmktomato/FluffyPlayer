@@ -8,6 +8,7 @@ import android.databinding.BaseObservable
 import android.databinding.DataBindingUtil
 import android.databinding.ObservableBoolean
 import android.databinding.ObservableField
+import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
@@ -19,6 +20,7 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.MetadataDTO
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
 import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.launch
+import java.io.ByteArrayInputStream
 
 class PlayerActivity : AppCompatActivity() {
     /**
@@ -26,9 +28,11 @@ class PlayerActivity : AppCompatActivity() {
      *
      * @param isPlaying indicates whether the music is playing.
      * @param title the music title.
+     * @param artwork the album artwork.
      */
     class ViewModel(val isPlaying: ObservableBoolean,
-                    val title: ObservableField<String> = ObservableField("(title)")) : BaseObservable()
+                    val title: ObservableField<String> = ObservableField("(title)"),
+                    val artwork: ObservableField<Drawable?> = ObservableField(null)) : BaseObservable()
 
     /**
      * Holds a service binder state.
@@ -88,6 +92,9 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        // TODO: Refactoring
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_player)
 
@@ -112,6 +119,16 @@ class PlayerActivity : AppCompatActivity() {
             mmr.setDataSource(temporaryLink, mapOf<String, String>())
             val title = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
             viewModel.title.set(title)
+
+            val artworkBytes: ByteArray? = mmr.embeddedPicture
+            val artworkDrawable = if (artworkBytes == null) {
+                noArtworkImage
+            } else {
+                ByteArrayInputStream(artworkBytes).use {
+                    Drawable.createFromStream(it, null)
+                }
+            }
+            viewModel.artwork.set(artworkDrawable)
         }
     }
 
@@ -123,4 +140,10 @@ class PlayerActivity : AppCompatActivity() {
         }
         binderState.unbind()
     }
+
+    /**
+     * Returns the empty album artwork.
+     */
+    private val noArtworkImage: Drawable
+        get() = resources.getDrawable(R.drawable.ic_no_image, null)
 }
