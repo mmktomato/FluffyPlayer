@@ -18,6 +18,7 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.databinding.ActivityPlayerBinding
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.MetadataDTO
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
+import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelperImpl
 import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.launch
 import java.io.ByteArrayInputStream
@@ -106,7 +107,7 @@ class PlayerActivity : AppCompatActivity() {
             binderState.svcBinder.togglePlaying()
         }
 
-        val dbxProxy = DbxProxy.create(this)
+        val dbxProxy = DbxProxy(SharedPrefsHelperImpl(this))
         val metadata = intent.getSerializableExtra("metadata") as MetadataDTO
         val serviceIntent = Intent(this, PlayerService::class.java)
 

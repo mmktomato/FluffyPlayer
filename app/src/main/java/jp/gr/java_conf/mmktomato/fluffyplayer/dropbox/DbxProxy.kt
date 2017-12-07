@@ -1,6 +1,5 @@
 package jp.gr.java_conf.mmktomato.fluffyplayer.dropbox
 
-import android.content.Context
 import com.dropbox.core.DbxRequestConfig
 import com.dropbox.core.android.Auth
 import com.dropbox.core.v2.DbxClientV2
@@ -14,53 +13,9 @@ import kotlinx.coroutines.experimental.async
 /**
  * A proxy of Dropbox API.
  *
- * @param accessToken An access token of Dropbox API.
+ * @param sharedPrefs a SharedPrefsHelper.
  */
-internal class DbxProxy(private val accessToken: String) {
-    companion object {
-        /**
-         * Checks that access token is exists and start authentication if needed.
-         */
-        internal fun auth(ctx: Context) {
-            if (SharedPrefsHelper.dbxAccessToken(ctx).isNullOrEmpty()) {
-                Auth.startOAuth2Authentication(ctx, BuildConfig.FLUFFY_PLAYER_DBX_APP_KEY)
-            }
-        }
-
-        /**
-         * Returns whether the authentication is finished.
-         */
-        internal fun isAuthenticated(ctx: Context): Boolean = !getAccessToken(ctx).isNullOrEmpty()
-
-        /**
-         * Returns a DbxProxy instance.
-         */
-        internal fun create(ctx: Context): DbxProxy = DbxProxy(getAccessToken(ctx))
-
-        /**
-         * Returns the access token of Dropbox API.
-         *
-         * If the access token is exists in SharedPreferences, returns it.
-         * If not, checks Auth.getOAuth2Token (result of OAuth2 authentication).
-         *
-         * @return the access token of Dropbox API.
-         */
-        private fun getAccessToken(ctx: Context): String {
-            var ret = SharedPrefsHelper.dbxAccessToken(ctx)
-            if (ret.isNullOrEmpty()) {
-                val accessToken = Auth.getOAuth2Token()
-                if (accessToken.isNullOrEmpty()) {
-                    ret = ""
-                }
-                else {
-                    ret = accessToken
-                    SharedPrefsHelper.dbxAccessToken(ctx, ret)
-                }
-            }
-            return ret
-        }
-    }
-
+internal class DbxProxy(private val sharedPrefs: SharedPrefsHelper) {
     /**
      * An Dropbox API client.
      */
@@ -68,7 +23,44 @@ internal class DbxProxy(private val accessToken: String) {
 
     init {
         val config = DbxRequestConfig(AppPrefs.appName)
-        client = DbxClientV2(config, accessToken)
+        client = DbxClientV2(config, sharedPrefs.dbxAccessToken)
+    }
+
+    /**
+     * Checks that access token is exists and start authentication if needed.
+     */
+    internal fun auth() {
+        if (sharedPrefs.dbxAccessToken.isNullOrEmpty()) {
+            Auth.startOAuth2Authentication(sharedPrefs.context, BuildConfig.FLUFFY_PLAYER_DBX_APP_KEY)
+        }
+    }
+
+    /**
+     * Returns whether the authentication is finished.
+     */
+    internal fun isAuthenticated(): Boolean = !getAccessToken().isNullOrEmpty()
+
+    /**
+     * Returns the access token of Dropbox API.
+     *
+     * If the access token is exists in SharedPreferences, returns it.
+     * If not, checks Auth.getOAuth2Token (result of OAuth2 authentication).
+     *
+     * @return the access token of Dropbox API.
+     */
+    private fun getAccessToken(): String {
+        var ret = sharedPrefs.dbxAccessToken
+        if (ret.isNullOrEmpty()) {
+            val accessToken = Auth.getOAuth2Token()
+            if (accessToken.isNullOrEmpty()) {
+                ret = ""
+            }
+            else {
+                ret = accessToken
+                sharedPrefs.dbxAccessToken = ret
+            }
+        }
+        return ret
     }
 
     /**
