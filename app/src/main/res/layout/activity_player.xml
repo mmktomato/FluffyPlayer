@@ -3,7 +3,7 @@
     <data>
         <variable
             name="viewModel"
-            type="jp.gr.java_conf.mmktomato.fluffyplayer.PlayerActivity.ViewModel" />
+            type="jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.PlayerActivityViewModel" />
     </data>
 
     <android.support.constraint.ConstraintLayout
