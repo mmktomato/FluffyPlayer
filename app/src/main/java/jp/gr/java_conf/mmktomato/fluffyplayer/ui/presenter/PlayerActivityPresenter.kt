@@ -40,14 +40,8 @@ internal interface PlayerActivityPresenter {
      */
     val unbindService: () -> Unit
 
-    /**
-     * A callback of the activity's `onCreate`.
-     */
     fun onCreate()
 
-    /**
-     * A callback of the activity's `onDestroy`.
-     */
     fun onDestroy() {
         if (svcState.isBound) {
             unbindService()
@@ -125,9 +119,6 @@ internal class PlayerActivityPresenterImpl(
      */
     override lateinit var svcState: PlayerServiceState
 
-    /**
-     * A callback of the activity's `onCreate`.
-     */
     override fun onCreate() {
         playButton.setOnClickListener { v -> onPlayButtonClick() }
 

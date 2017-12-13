@@ -42,14 +42,8 @@ internal interface FileBrowseActivityPresenter {
      */
     var listViewAdapter: DbxFileAdapter
 
-    /**
-     * A callback of the activity's `onCreate`
-     */
     fun onCreate()
 
-    /**
-     * A callback of the activity's `onResume`
-     */
     fun onResume()
 
     /**
@@ -120,16 +114,10 @@ internal class FileBrowseActivityPresenterImpl(
      */
     override var lastResult: ListFolderResult? = null
 
-    /**
-     * A callback of the activity's `onCreate`
-     */
     override fun onCreate() {
         initialize()
     }
 
-    /**
-     * A callback of the activity's `onResume`
-     */
     override fun onResume() {
         // do nothing.
     }
