@@ -23,6 +23,10 @@ class MainActivity : AppCompatActivity() {
                     val intent = Intent(this, FileBrowseActivity::class.java)
                     startActivity(intent)
                 }
+                1 -> {
+                    val intent = Intent(this, SettingsActivity::class.java)
+                    startActivity(intent)
+                }
             }
         }
     }
