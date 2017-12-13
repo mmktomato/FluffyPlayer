@@ -36,32 +36,19 @@ internal class DbxProxy(private val sharedPrefs: SharedPrefsHelper) {
     }
 
     /**
-     * Returns whether the authentication is finished.
+     * Saves the access token from `Auth.getOAuth2AccessToken`.
      */
-    internal fun isAuthenticated(): Boolean = !getAccessToken().isNullOrEmpty()
+    internal fun saveAccessToken() {
+        val accessToken = Auth.getOAuth2Token()
+        if (!accessToken.isNullOrEmpty()) {
+            sharedPrefs.dbxAccessToken = accessToken
+        }
+    }
 
     /**
-     * Returns the access token of Dropbox API.
-     *
-     * If the access token is exists in SharedPreferences, returns it.
-     * If not, checks Auth.getOAuth2Token (result of OAuth2 authentication).
-     *
-     * @return the access token of Dropbox API.
+     * Returns whether the authentication is finished.
      */
-    private fun getAccessToken(): String {
-        var ret = sharedPrefs.dbxAccessToken
-        if (ret.isNullOrEmpty()) {
-            val accessToken = Auth.getOAuth2Token()
-            if (accessToken.isNullOrEmpty()) {
-                ret = ""
-            }
-            else {
-                ret = accessToken
-                sharedPrefs.dbxAccessToken = ret
-            }
-        }
-        return ret
-    }
+    internal fun isAuthenticated(): Boolean = !sharedPrefs.dbxAccessToken.isNullOrEmpty()
 
     /**
      * Returns the user display name.

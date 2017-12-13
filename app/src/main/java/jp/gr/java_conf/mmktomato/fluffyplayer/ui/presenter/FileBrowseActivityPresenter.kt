@@ -106,11 +106,6 @@ internal class FileBrowseActivityPresenterImpl(
         override val getDbxPath: () -> String?,
         private val startActivity: (Intent) -> Unit) : FileBrowseActivityPresenter {
     /**
-     * Whether the activity is initialized.
-     */
-    private var isInitialized = false
-
-    /**
      * A filesListView's adapter.
      */
     override lateinit var listViewAdapter: DbxFileAdapter
@@ -129,19 +124,14 @@ internal class FileBrowseActivityPresenterImpl(
      * A callback of the activity's `onCreate`
      */
     override fun onCreate() {
-        if (dbxProxy.isAuthenticated()) {
-            initialize()
-        }
-        dbxProxy.auth()
+        initialize()
     }
 
     /**
      * A callback of the activity's `onResume`
      */
     override fun onResume() {
-        if (dbxProxy.isAuthenticated() && !isInitialized) {
-            initialize()
-        }
+        // do nothing.
     }
 
     /**
@@ -171,8 +161,6 @@ internal class FileBrowseActivityPresenterImpl(
                 onFilesListViewItemClick(metadata)
             }
         }
-
-        isInitialized = true
     }
 
     /**
