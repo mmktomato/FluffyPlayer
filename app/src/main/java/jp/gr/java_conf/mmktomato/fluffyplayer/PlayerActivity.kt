@@ -10,8 +10,8 @@ import android.os.Bundle
 import android.os.IBinder
 import android.widget.Button
 import jp.gr.java_conf.mmktomato.fluffyplayer.databinding.ActivityPlayerBinding
+import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.MetadataDTO
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelperImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.PlayerActivityPresenter
@@ -50,7 +50,7 @@ class PlayerActivity : AppCompatActivity() {
         presenter = PlayerActivityPresenterImpl(
                 dbxProxy = dbxProxy,
                 viewModel = viewModel,
-                metadata = intent.getSerializableExtra("metadata") as MetadataDTO,
+                metadata = intent.getSerializableExtra("metadata") as DbxNodeMetadata,
                 playerServiceIntent =  Intent(this, PlayerService::class.java),
                 bindService = { intent -> bindService(intent, connection, Context.BIND_AUTO_CREATE) },
                 unbindService = { unbindService(connection) },

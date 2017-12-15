@@ -7,12 +7,14 @@ import android.media.MediaMetadataRetriever
 import android.os.IBinder
 import android.widget.Button
 import jp.gr.java_conf.mmktomato.fluffyplayer.R
+import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.MetadataDTO
+import jp.gr.java_conf.mmktomato.fluffyplayer.entity.MusicMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceState
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.PlayerActivityViewModel
 import kotlinx.coroutines.experimental.CommonPool
+import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.launch
 import java.io.ByteArrayInputStream
 
@@ -31,9 +33,19 @@ internal interface PlayerActivityPresenter {
     var svcState: PlayerServiceState
 
     /**
-     * a Dropbox's file or folder metadata.
+     * a Dropbox's node metadata.
      */
-    val metadata: MetadataDTO
+    val metadata: DbxNodeMetadata
+
+    /**
+     * a musing streaming url.
+     */
+    var streamingUrl: String
+
+    /**
+     * indicates whether the PlayerService is initialized.
+     */
+    var isPlayerServiceInitialized: Boolean
 
     /**
      * a callback to bind a service.
@@ -43,6 +55,10 @@ internal interface PlayerActivityPresenter {
     fun onCreate()
 
     fun onDestroy() {
+        if (!isPlayerServiceInitialized) {
+            return
+        }
+
         if (svcState.isBound) {
             unbindService()
         }
@@ -53,7 +69,9 @@ internal interface PlayerActivityPresenter {
      * A callback of playButton's onClick.
      */
     fun onPlayButtonClick() {
-        svcState.binder.togglePlaying()
+        if (isPlayerServiceInitialized) {
+            svcState.binder.togglePlaying()
+        }
     }
 
     /**
@@ -70,6 +88,19 @@ internal interface PlayerActivityPresenter {
         svcState =  PlayerServiceState(binder as PlayerService.LocalBinder, true) { isPlaying ->
             viewModel.isPlaying.set(isPlaying)
         }
+
+        val musicMetadataDeferred = async { getMusicMetadata(streamingUrl) }
+        val preparePlayerJob = launch { svcState.binder.prepare() }
+
+        launch {
+            val musicMetadata = musicMetadataDeferred.await()
+            preparePlayerJob.join()
+
+            setMusicMetadata(musicMetadata)
+            svcState.binder.start()
+
+            isPlayerServiceInitialized = true
+        }
     }
 
     /**
@@ -80,11 +111,21 @@ internal interface PlayerActivityPresenter {
     }
 
     /**
-     * Sets the music metadata.
+     * Returns the music metadata.
      *
      * @param uri the music uri.
      */
-    fun setMetadata(uri: String)
+    fun getMusicMetadata(uri: String): MusicMetadata
+
+    /**
+     * Sets the music metadata.
+     *
+     * @param metadata the music metadata.
+     */
+    fun setMusicMetadata(metadata: MusicMetadata) {
+        viewModel.title.set(metadata.title)
+        viewModel.artwork.set(metadata.artwork)
+    }
 
     /**
      * Returns the empty album artwork.
@@ -97,7 +138,7 @@ internal interface PlayerActivityPresenter {
  *
  * @param dbxProxy the Dropbox API Proxy.
  * @param viewModel the view model.
- * @param metadata the file or folder metadata.
+ * @param metadata the Dropbox's node metadata.
  * @param playerServiceIntent the player service intent.
  * @param bindService the callback to bind a service.
  * @param unbindService the callback to unbind a service.
@@ -107,7 +148,7 @@ internal interface PlayerActivityPresenter {
 internal class PlayerActivityPresenterImpl(
         private val dbxProxy: DbxProxy,
         override val viewModel: PlayerActivityViewModel,
-        override val metadata: MetadataDTO,
+        override val metadata: DbxNodeMetadata,
         private val playerServiceIntent: Intent,
         private val bindService: (Intent) -> Unit,
         override val unbindService: () -> Unit,
@@ -119,14 +160,25 @@ internal class PlayerActivityPresenterImpl(
      */
     override lateinit var svcState: PlayerServiceState
 
+    /**
+     * a music streaming Url.
+     */
+    override lateinit var streamingUrl: String
+
+    /**
+     * indicates whether the PlayerService is initialized.
+     */
+    override var isPlayerServiceInitialized: Boolean = false
+
     override fun onCreate() {
+        viewModel.title.set("(Loading...)")
+
         playButton.setOnClickListener { v -> onPlayButtonClick() }
 
         launch(CommonPool) {
-            val temporaryLink = dbxProxy.getTemporaryLink(metadata.path).await()
+            streamingUrl = dbxProxy.getTemporaryLink(metadata.path).await()
 
-            bindPlayerService(temporaryLink)
-            setMetadata(temporaryLink)
+            bindPlayerService(streamingUrl)
         }
     }
 
@@ -141,16 +193,16 @@ internal class PlayerActivityPresenterImpl(
     }
 
     /**
-     * Sets the music metadata.
-     *
-     * @param uri the music uri.
+     * Returns the music metadata.
      */
-    override fun setMetadata(uri: String) {
+    override fun getMusicMetadata(uri: String): MusicMetadata {
         val mmr = MediaMetadataRetriever()
         mmr.setDataSource(uri, mapOf<String, String>())
-        val title = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
-        viewModel.title.set(title)
 
+        // title
+        val title = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+
+        // artwork
         val artworkBytes: ByteArray? = mmr.embeddedPicture
         val artworkDrawable = if (artworkBytes == null) {
             noArtworkImage
@@ -159,7 +211,8 @@ internal class PlayerActivityPresenterImpl(
                 Drawable.createFromStream(it, null)
             }
         }
-        viewModel.artwork.set(artworkDrawable)
+
+        return MusicMetadata(title, artworkDrawable)
     }
 
     /**

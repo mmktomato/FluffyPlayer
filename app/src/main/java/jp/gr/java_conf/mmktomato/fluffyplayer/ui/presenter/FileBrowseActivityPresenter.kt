@@ -8,8 +8,8 @@ import com.dropbox.core.v2.files.ListFolderResult
 import jp.gr.java_conf.mmktomato.fluffyplayer.FileBrowseActivity
 import jp.gr.java_conf.mmktomato.fluffyplayer.PlayerActivity
 import jp.gr.java_conf.mmktomato.fluffyplayer.R
+import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.MetadataDTO
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelper
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.DbxFileAdapter
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.DbxFileAdapterImpl
@@ -57,7 +57,7 @@ internal interface FileBrowseActivityPresenter {
 
         // add
         listViewAdapter.addItems(res.entries
-                .map { MetadataDTO.createFrom(it) }
+                .map { DbxNodeMetadata.createFrom(it) }
                 .filter { !it.isFile || (it.isFile && isMusicFile(it.name)) })
 
         if (!res.hasMore) {
@@ -145,7 +145,7 @@ internal class FileBrowseActivityPresenterImpl(
 
             val metadata = listViewAdapter.getItem(position)
 
-            if (metadata is MetadataDTO) {
+            if (metadata is DbxNodeMetadata) {
                 onFilesListViewItemClick(metadata)
             }
         }
@@ -163,7 +163,7 @@ internal class FileBrowseActivityPresenterImpl(
      *
      * @param metadata the tapped metadata.
      */
-    private fun onFilesListViewItemClick(metadata: MetadataDTO) {
+    private fun onFilesListViewItemClick(metadata: DbxNodeMetadata) {
         if (metadata.isFile) {
             val intent = Intent(sharedPrefs.context, PlayerActivity::class.java)
             intent.putExtra("metadata", metadata)

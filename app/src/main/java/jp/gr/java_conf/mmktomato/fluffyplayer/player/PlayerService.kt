@@ -30,9 +30,17 @@ internal class PlayerService : Service() {
         private val onPlayerStateChangedListeners = mutableMapOf<Int, (Boolean) -> Unit>()
 
         /**
+         * Prepares datasource.
+         */
+        fun prepare() {
+            player.prepare()
+        }
+
+        /**
          * Starts playing the music.
          */
         fun start() {
+            // ALAC is not supported ...
             player.start()
             notifyOnPlayerStateChanged()
         }
@@ -103,10 +111,6 @@ internal class PlayerService : Service() {
 
         player.setAudioAttributes(audioAttr)
         player.setDataSource(uri)
-        player.setOnPreparedListener { mp ->
-            // ALAC is not supported ...
-            binder.start()
-        }
         player.setOnErrorListener { mp, what, extra ->
             Log.e(AppPrefs.logTag, "what:$what, extra:$extra")
             return@setOnErrorListener true
@@ -114,7 +118,6 @@ internal class PlayerService : Service() {
         player.setOnCompletionListener {
             binder.notifyOnPlayerStateChanged()
         }
-        player.prepareAsync()
 
         return binder
     }

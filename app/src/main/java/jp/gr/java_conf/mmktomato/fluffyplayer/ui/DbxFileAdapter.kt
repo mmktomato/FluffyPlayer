@@ -7,7 +7,7 @@ import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.TextView
 import jp.gr.java_conf.mmktomato.fluffyplayer.R
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.MetadataDTO
+import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
 
 /**
  * A custom adapter of ListView to show Dropbox files.
@@ -16,14 +16,14 @@ internal interface DbxFileAdapter {
     /**
      * listView items.
      */
-    val items: MutableList<MetadataDTO>
+    val items: MutableList<DbxNodeMetadata>
 
     /**
      * Adds items to this adapter.
      *
      * @param list items to add.
      */
-    fun addItems(list: List<MetadataDTO>) {
+    fun addItems(list: List<DbxNodeMetadata>) {
         items.addAll(list)
         notifyItemsChanged()
     }
@@ -48,7 +48,7 @@ internal class DbxFileAdapterImpl(private val inflater: LayoutInflater) : BaseAd
     /**
      * listView items.
      */
-    override val items = mutableListOf<MetadataDTO>()
+    override val items = mutableListOf<DbxNodeMetadata>()
 
     override fun getCount(): Int = items.size
 
