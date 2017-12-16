@@ -10,7 +10,7 @@ package jp.gr.java_conf.mmktomato.fluffyplayer.player
 internal class PlayerServiceState(
         val binder: PlayerService.LocalBinder,
         var isBound: Boolean,
-        private val onPlayerStateChangedListener: (Boolean) -> Unit) {
+        private val onPlayerStateChangedListener: () -> Unit) {
     /**
      * the list of listener indices.
      */

@@ -143,10 +143,10 @@ internal class FileBrowseActivityPresenterImpl(
                 return@setOnItemClickListener
             }
 
-            val metadata = listViewAdapter.getItem(position)
+            val dbxMetadata = listViewAdapter.getItem(position)
 
-            if (metadata is DbxNodeMetadata) {
-                onFilesListViewItemClick(metadata)
+            if (dbxMetadata is DbxNodeMetadata) {
+                onFilesListViewItemClick(dbxMetadata)
             }
         }
     }
@@ -161,17 +161,17 @@ internal class FileBrowseActivityPresenterImpl(
     /**
      * Called when an item of filesListView is tapped.
      *
-     * @param metadata the tapped metadata.
+     * @param dbxMetadata the tapped metadata.
      */
-    private fun onFilesListViewItemClick(metadata: DbxNodeMetadata) {
-        if (metadata.isFile) {
+    private fun onFilesListViewItemClick(dbxMetadata: DbxNodeMetadata) {
+        if (dbxMetadata.isFile) {
             val intent = Intent(sharedPrefs.context, PlayerActivity::class.java)
-            intent.putExtra("metadata", metadata)
+            intent.putExtra("dbxMetadata", dbxMetadata)
             startActivity(intent)
         }
         else {
             val intent = Intent(sharedPrefs.context, FileBrowseActivity::class.java)
-            intent.putExtra("path", metadata.path)
+            intent.putExtra("path", dbxMetadata.path)
             startActivity(intent)
         }
     }
