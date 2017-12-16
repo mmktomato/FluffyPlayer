@@ -46,11 +46,10 @@ class PlayerActivity : AppCompatActivity() {
         val binding = DataBindingUtil.setContentView<ActivityPlayerBinding>(this, R.layout.activity_player)
         binding.viewModel = viewModel
 
-
         presenter = PlayerActivityPresenterImpl(
                 dbxProxy = dbxProxy,
                 viewModel = viewModel,
-                metadata = intent.getSerializableExtra("metadata") as DbxNodeMetadata,
+                dbxMetadata = intent.getSerializableExtra("dbxMetadata") as DbxNodeMetadata,
                 playerServiceIntent =  Intent(this, PlayerService::class.java),
                 bindService = { intent -> bindService(intent, connection, Context.BIND_AUTO_CREATE) },
                 unbindService = { unbindService(connection) },

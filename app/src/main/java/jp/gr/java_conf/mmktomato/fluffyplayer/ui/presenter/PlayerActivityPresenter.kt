@@ -13,9 +13,7 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.entity.MusicMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceState
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.PlayerActivityViewModel
-import kotlinx.coroutines.experimental.CommonPool
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.experimental.*
 import java.io.ByteArrayInputStream
 
 /**
@@ -35,12 +33,7 @@ internal interface PlayerActivityPresenter {
     /**
      * a Dropbox's node metadata.
      */
-    val metadata: DbxNodeMetadata
-
-    /**
-     * a musing streaming url.
-     */
-    var streamingUrl: String
+    val dbxMetadata: DbxNodeMetadata
 
     /**
      * indicates whether the PlayerService is initialized.
@@ -76,31 +69,37 @@ internal interface PlayerActivityPresenter {
 
     /**
      * Binds the player service.
-     *
-     * @param uri the music uri.
      */
-    fun bindPlayerService(uri: String)
+    fun bindPlayerService()
 
     /**
      * Initializes the PlayerServiceState.
      */
-    fun initializePlayerServiceState(binder: IBinder?) {
-        svcState =  PlayerServiceState(binder as PlayerService.LocalBinder, true) { isPlaying ->
-            viewModel.isPlaying.set(isPlaying)
+    fun initializePlayerServiceState(binder: IBinder?) = runBlocking {
+        val onPlayerStateChanged = { viewModel.isPlaying.set(svcState.binder.isPlaying) }
+        svcState =  PlayerServiceState(binder as PlayerService.LocalBinder, true, onPlayerStateChanged)
+
+        onPlayerStateChanged()
+
+        val musicUri = getMusicUri().await()
+        val musicMetadataDeferred = async {
+            getMusicMetadata(musicUri).await()
+        }
+        val preparePlayerJob = launch {
+            if (!svcState.binder.isPlaying) {
+                svcState.binder.prepare(musicUri)  // suspend function.
+            }
         }
 
-        val musicMetadataDeferred = async { getMusicMetadata(streamingUrl) }
-        val preparePlayerJob = launch { svcState.binder.prepare() }
+        val musicMetadata = musicMetadataDeferred.await()
+        preparePlayerJob.join()
 
-        launch {
-            val musicMetadata = musicMetadataDeferred.await()
-            preparePlayerJob.join()
-
-            setMusicMetadata(musicMetadata)
+        setMusicMetadata(musicMetadata)
+        if (!svcState.binder.isPlaying) {
             svcState.binder.start()
-
-            isPlayerServiceInitialized = true
         }
+
+        isPlayerServiceInitialized = true
     }
 
     /**
@@ -115,7 +114,7 @@ internal interface PlayerActivityPresenter {
      *
      * @param uri the music uri.
      */
-    fun getMusicMetadata(uri: String): MusicMetadata
+    fun getMusicMetadata(uri: String): Deferred<MusicMetadata>
 
     /**
      * Sets the music metadata.
@@ -128,6 +127,11 @@ internal interface PlayerActivityPresenter {
     }
 
     /**
+     * Returns the music uri.
+     */
+    fun getMusicUri(): Deferred<String>
+
+    /**
      * Returns the empty album artwork.
      */
     val noArtworkImage: Drawable
@@ -138,7 +142,7 @@ internal interface PlayerActivityPresenter {
  *
  * @param dbxProxy the Dropbox API Proxy.
  * @param viewModel the view model.
- * @param metadata the Dropbox's node metadata.
+ * @param dbxMetadata the Dropbox's node metadata.
  * @param playerServiceIntent the player service intent.
  * @param bindService the callback to bind a service.
  * @param unbindService the callback to unbind a service.
@@ -148,7 +152,7 @@ internal interface PlayerActivityPresenter {
 internal class PlayerActivityPresenterImpl(
         private val dbxProxy: DbxProxy,
         override val viewModel: PlayerActivityViewModel,
-        override val metadata: DbxNodeMetadata,
+        override val dbxMetadata: DbxNodeMetadata,
         private val playerServiceIntent: Intent,
         private val bindService: (Intent) -> Unit,
         override val unbindService: () -> Unit,
@@ -161,11 +165,6 @@ internal class PlayerActivityPresenterImpl(
     override lateinit var svcState: PlayerServiceState
 
     /**
-     * a music streaming Url.
-     */
-    override lateinit var streamingUrl: String
-
-    /**
      * indicates whether the PlayerService is initialized.
      */
     override var isPlayerServiceInitialized: Boolean = false
@@ -175,27 +174,21 @@ internal class PlayerActivityPresenterImpl(
 
         playButton.setOnClickListener { v -> onPlayButtonClick() }
 
-        launch(CommonPool) {
-            streamingUrl = dbxProxy.getTemporaryLink(metadata.path).await()
-
-            bindPlayerService(streamingUrl)
-        }
+        bindPlayerService()
     }
 
     /**
      * Binds the player service.
-     *
-     * @param uri the music uri.
      */
-    override fun bindPlayerService(uri: String) {
-        playerServiceIntent.putExtra("uri", uri)
+    override fun bindPlayerService() {
+        playerServiceIntent.putExtra("dbxMetadata", dbxMetadata)
         bindService(playerServiceIntent)
     }
 
     /**
      * Returns the music metadata.
      */
-    override fun getMusicMetadata(uri: String): MusicMetadata {
+    override fun getMusicMetadata(uri: String): Deferred<MusicMetadata> = async {
         val mmr = MediaMetadataRetriever()
         mmr.setDataSource(uri, mapOf<String, String>())
 
@@ -212,7 +205,14 @@ internal class PlayerActivityPresenterImpl(
             }
         }
 
-        return MusicMetadata(title, artworkDrawable)
+        return@async MusicMetadata(title, artworkDrawable)
+    }
+
+    /**
+     * Returns a music uri.
+     */
+    override fun getMusicUri(): Deferred<String> {
+        return dbxProxy.getTemporaryLink(dbxMetadata.path)
     }
 
     /**
