@@ -23,6 +23,9 @@ internal class PlayerService : Service() {
      * @param player a media player.
      */
     internal class LocalBinder(private val player: MediaPlayer) : Binder() {
+
+        // TODO: Refactoring.
+
         /**
          * the counter of listener
          */
@@ -32,6 +35,11 @@ internal class PlayerService : Service() {
          * the map of listeners for onPlayerStateChanged.
          */
         private val onPlayerStateChangedListeners = mutableMapOf<Int, () -> Unit>()
+
+        /**
+         * the map of listeners for onMusicChanged.
+         */
+        private val onMusicChangedListeners = mutableMapOf<Int, () -> Unit>()
 
         /**
          * Prepares dataSource.
@@ -61,6 +69,17 @@ internal class PlayerService : Service() {
         }
 
         /**
+         * Resets the player.
+         */
+        fun reset() {
+            player.stop()
+            notifyOnPlayerStateChanged()
+
+            player.reset()
+            notifyOnMusicChanged()
+        }
+
+        /**
          * Toggles playing state.
          */
         fun togglePlaying() {
@@ -83,9 +102,18 @@ internal class PlayerService : Service() {
          * @param listener the listener to add.
          */
         fun addOnPlayerStateChangedListener(listener: () -> Unit): Int {
-            val index = ++listenerCounter
-            onPlayerStateChangedListeners.put(index, listener)
-            return index
+            onPlayerStateChangedListeners.put(++listenerCounter, listener)
+            return listenerCounter
+        }
+
+        /**
+         * Adds listener for onMusicChanged.
+         *
+         * @param listener the listener to add.
+         */
+        fun addOnMusicChangedListener(listener: () -> Unit): Int {
+            onMusicChangedListeners.put(++listenerCounter, listener)
+            return listenerCounter
         }
 
         /**
@@ -98,10 +126,26 @@ internal class PlayerService : Service() {
         }
 
         /**
+         * Removes listener for onMusicChanged.
+         *
+         * @param index the listener index.
+         */
+        fun removeOnMusicChangedListener(index: Int) {
+            onMusicChangedListeners.remove(index)
+        }
+
+        /**
          * Notifies onPlayerStateChanged.
          */
         fun notifyOnPlayerStateChanged() {
             onPlayerStateChangedListeners.values.forEach { it.invoke() }
+        }
+
+        /**
+         * Notifies onMusicChanged.
+         */
+        fun notifyOnMusicChanged() {
+            onMusicChangedListeners.values.forEach { it.invoke() }
         }
     }
 
@@ -111,9 +155,18 @@ internal class PlayerService : Service() {
     private val player = MediaPlayer()
 
     /**
+     * the binder instance to communicate with activity.
+     */
+    private val binder: LocalBinder
+
+    /**
      * the Dropbox's metadata.
      */
     private lateinit var dbxMetadata: DbxNodeMetadata
+
+    init {
+        binder = LocalBinder(player)
+    }
 
     /**
      * Returns a new instance of `Notification`.
@@ -141,14 +194,26 @@ internal class PlayerService : Service() {
         super.onCreate()
     }
 
-    override fun onBind(intent: Intent): IBinder? {
-        dbxMetadata = intent.getSerializableExtra("dbxMetadata") as DbxNodeMetadata
+    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+        val intentMetadata = intent.getSerializableExtra("dbxMetadata") as DbxNodeMetadata
 
+        if (this::dbxMetadata.isInitialized && dbxMetadata.path != intentMetadata.path) {
+            binder.reset()
+        }
+        dbxMetadata = intentMetadata
+
+        // start foreground.
+        val notificationId = 1
+        startForeground(notificationId, createNotification())
+
+        return START_STICKY
+    }
+
+    override fun onBind(intent: Intent): IBinder? {
         val audioAttr = AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_MEDIA)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .build()
-        val binder = LocalBinder(player)
 
         player.setAudioAttributes(audioAttr)
         player.setOnErrorListener { mp, what, extra ->
@@ -157,11 +222,9 @@ internal class PlayerService : Service() {
         }
         player.setOnCompletionListener {
             binder.notifyOnPlayerStateChanged()
-        }
 
-        // start foreground.
-        val notificationId = 1
-        startForeground(notificationId, createNotification())
+            stopSelf()
+        }
 
         return binder
     }
