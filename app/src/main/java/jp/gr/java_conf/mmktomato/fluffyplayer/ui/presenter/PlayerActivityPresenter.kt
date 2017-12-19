@@ -68,21 +68,25 @@ internal interface PlayerActivityPresenter {
     }
 
     /**
-     * Binds the player service.
-     */
-    fun bindPlayerService()
-
-    /**
      * Initializes the PlayerServiceState.
      */
-    fun initializePlayerServiceState(binder: IBinder?) = runBlocking {
+    fun initializePlayerServiceState(binder: IBinder?) = launch(CommonPool) {
         val onPlayerStateChanged = { viewModel.isPlaying.set(svcState.binder.isPlaying) }
-        svcState =  PlayerServiceState(binder as PlayerService.LocalBinder, true, onPlayerStateChanged)
+        val onMusicChanged = { resetUI() }
+        svcState =  PlayerServiceState(
+                binder = binder as PlayerService.LocalBinder,
+                isBound = true,
+                onPlayerStateChangedListener = onPlayerStateChanged,
+                onMusicChanged = onMusicChanged)
 
         onPlayerStateChanged()
 
         val musicUri = getMusicUri().await()
         val musicMetadataDeferred = async {
+            /**
+             * TODO: if the currently played music is not changed, to retrieve metadata is not needed.
+             * but to set metadata to UI is needed. so the metadata must be stored somewhere.
+             */
             getMusicMetadata(musicUri).await()
         }
         val preparePlayerJob = launch {
@@ -132,6 +136,17 @@ internal interface PlayerActivityPresenter {
     fun getMusicUri(): Deferred<String>
 
     /**
+     * Resets UI Components.
+     */
+    fun resetUI() {
+        setMusicMetadata(MusicMetadata(
+                title = "(Loading...)",
+                artwork = noArtworkImage))
+
+        viewModel.isPlaying.set(false)
+    }
+
+    /**
      * Returns the empty album artwork.
      */
     val noArtworkImage: Drawable
@@ -144,6 +159,7 @@ internal interface PlayerActivityPresenter {
  * @param viewModel the view model.
  * @param dbxMetadata the Dropbox's node metadata.
  * @param playerServiceIntent the player service intent.
+ * @param startService the callback to start a service.
  * @param bindService the callback to bind a service.
  * @param unbindService the callback to unbind a service.
  * @param playButton the play button.
@@ -154,6 +170,7 @@ internal class PlayerActivityPresenterImpl(
         override val viewModel: PlayerActivityViewModel,
         override val dbxMetadata: DbxNodeMetadata,
         private val playerServiceIntent: Intent,
+        private val startService: (Intent) -> Unit,
         private val bindService: (Intent) -> Unit,
         override val unbindService: () -> Unit,
         private val playButton: Button,
@@ -170,18 +187,12 @@ internal class PlayerActivityPresenterImpl(
     override var isPlayerServiceInitialized: Boolean = false
 
     override fun onCreate() {
-        viewModel.title.set("(Loading...)")
+        resetUI()
 
         playButton.setOnClickListener { v -> onPlayButtonClick() }
 
-        bindPlayerService()
-    }
-
-    /**
-     * Binds the player service.
-     */
-    override fun bindPlayerService() {
         playerServiceIntent.putExtra("dbxMetadata", dbxMetadata)
+        startService(playerServiceIntent)
         bindService(playerServiceIntent)
     }
 
