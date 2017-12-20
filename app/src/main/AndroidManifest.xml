@@ -22,7 +22,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".PlayerActivity" />
+        <activity
+            android:name=".PlayerActivity"
+            android:launchMode="singleTop" />
         <activity android:name=".FileBrowseActivity" />
         <activity
             android:name="com.dropbox.core.android.AuthActivity"

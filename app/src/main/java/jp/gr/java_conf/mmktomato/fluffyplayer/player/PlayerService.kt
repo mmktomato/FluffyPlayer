@@ -172,11 +172,6 @@ internal class PlayerService : Service() {
      * Returns a new instance of `Notification`.
      */
     private fun createNotification(): Notification {
-
-        // TODO: fix
-        // PlayerActivity is stacked per launched from notification.
-        // Maybe I had better to set SingleTop to PlayerActivity?
-
         val notificationIntent = Intent(this, PlayerActivity::class.java)
         notificationIntent.putExtra("dbxMetadata", dbxMetadata)
         val pendingIntent = PendingIntent.getActivities(
