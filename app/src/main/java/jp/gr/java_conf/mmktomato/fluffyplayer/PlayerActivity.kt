@@ -1,5 +1,6 @@
 package jp.gr.java_conf.mmktomato.fluffyplayer
 
+import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -49,6 +50,7 @@ class PlayerActivity : AppCompatActivity() {
         val playerServiceIntent = Intent(this, PlayerService::class.java)
 
         presenter = PlayerActivityPresenterImpl(
+                sharedPrefs = sharedPrefs,
                 dbxProxy = dbxProxy,
                 viewModel = viewModel,
                 dbxMetadata = intent.getSerializableExtra("dbxMetadata") as DbxNodeMetadata,
@@ -56,6 +58,8 @@ class PlayerActivity : AppCompatActivity() {
                 startService = { intent -> startService(intent) },
                 bindService = { intent -> bindService(intent, connection, Context.BIND_AUTO_CREATE) },
                 unbindService = { unbindService(connection) },
+                getString = ::getString,
+                notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager,
                 playButton = findViewById<Button>(R.id.playButton),
                 resources = resources
         )

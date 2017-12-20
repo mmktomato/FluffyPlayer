@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">Fluffy Player</string>
     <string name="title_activity_file_browse">FileBrowseActivity</string>
+    <string name="now_loading_text">(Loading...)</string>
+    <string name="unknown_music_title">(Unknown)</string>
 </resources>

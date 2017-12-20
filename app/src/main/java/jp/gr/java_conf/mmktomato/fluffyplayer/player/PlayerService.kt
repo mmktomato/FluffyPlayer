@@ -6,12 +6,11 @@ import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.os.Binder
 import android.os.IBinder
-import android.support.v4.app.NotificationCompat
 import android.util.Log
-import jp.gr.java_conf.mmktomato.fluffyplayer.PlayerActivity
 import jp.gr.java_conf.mmktomato.fluffyplayer.R
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.AppPrefs
+import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.NotificationUseCase
 
 /**
  * A music player service.
@@ -149,6 +148,13 @@ internal class PlayerService : Service() {
         }
     }
 
+    companion object {
+        /**
+         * the notification id.
+         */
+        val NOTIFICATION_ID = 1
+    }
+
     /**
      * the media player.
      */
@@ -164,25 +170,13 @@ internal class PlayerService : Service() {
      */
     private lateinit var dbxMetadata: DbxNodeMetadata
 
+    /**
+     * the NotificationUseCase.
+     */
+    private val notificationUseCase = NotificationUseCase()
+
     init {
         binder = LocalBinder(player)
-    }
-
-    /**
-     * Returns a new instance of `Notification`.
-     */
-    private fun createNotification(): Notification {
-        val notificationIntent = Intent(this, PlayerActivity::class.java)
-        notificationIntent.putExtra("dbxMetadata", dbxMetadata)
-        val pendingIntent = PendingIntent.getActivities(
-                this, 0, arrayOf(notificationIntent), PendingIntent.FLAG_UPDATE_CURRENT)
-
-        return NotificationCompat.Builder(this)
-                .setSmallIcon(R.drawable.ic_no_image)
-                .setContentTitle("test title")
-                .setContentText("test content")
-                .setContentIntent(pendingIntent)
-                .build()
     }
 
     override fun onCreate() {
@@ -191,15 +185,23 @@ internal class PlayerService : Service() {
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         val intentMetadata = intent.getSerializableExtra("dbxMetadata") as DbxNodeMetadata
+        var isServiceStarted = false
 
-        if (this::dbxMetadata.isInitialized && dbxMetadata.path != intentMetadata.path) {
-            binder.reset()
+        if (this::dbxMetadata.isInitialized) {
+            isServiceStarted = true
+
+            if (dbxMetadata.path != intentMetadata.path) {
+                binder.reset()
+            }
         }
         dbxMetadata = intentMetadata
 
-        // start foreground.
-        val notificationId = 1
-        startForeground(notificationId, createNotification())
+        if (!isServiceStarted) {
+            // start foreground.
+            val notification = notificationUseCase.createNowPlayingNotification(
+                    this, dbxMetadata, getString(R.string.now_loading_text))
+            startForeground(NOTIFICATION_ID, notification)
+        }
 
         return START_STICKY
     }
