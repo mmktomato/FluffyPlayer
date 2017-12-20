@@ -28,6 +28,9 @@ internal class PlayerServiceState(
      */
     fun unbind() {
         isBound = false
-        listenerIndices.forEach { index -> binder.removeOnPlayerStateChangedListener(index) }
+        listenerIndices.forEach { index ->
+            binder.removeOnPlayerStateChangedListener(index)
+            binder.removeOnMusicChangedListener(index)
+        }
     }
 }
