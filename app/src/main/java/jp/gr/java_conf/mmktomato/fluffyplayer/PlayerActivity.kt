@@ -6,20 +6,17 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.databinding.DataBindingUtil
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.IBinder
 import android.widget.Button
 import jp.gr.java_conf.mmktomato.fluffyplayer.databinding.ActivityPlayerBinding
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
-import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelperImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.PlayerActivityPresenter
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.PlayerActivityPresenterImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.PlayerActivityViewModel
 
-class PlayerActivity : AppCompatActivity() {
+class PlayerActivity : ActivityBase() {
     private lateinit var presenter: PlayerActivityPresenter
 
     /**
@@ -40,9 +37,6 @@ class PlayerActivity : AppCompatActivity() {
      * Initializes the `presenter`.
      */
     private fun initializePresenter() {
-        val sharedPrefs = SharedPrefsHelperImpl(this)
-        val dbxProxy = DbxProxy(sharedPrefs)
-
         val viewModel = PlayerActivityViewModel()
         val binding = DataBindingUtil.setContentView<ActivityPlayerBinding>(this, R.layout.activity_player)
         binding.viewModel = viewModel

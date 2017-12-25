@@ -6,7 +6,7 @@ import android.content.SharedPreferences
 /**
  * An helper of SharedPreferences.
  */
-internal interface SharedPrefsHelper {
+interface SharedPrefsHelper {
     /**
      * an android context.
      */
@@ -28,7 +28,7 @@ internal interface SharedPrefsHelper {
  *
  * @param context An android context.
  */
-internal class SharedPrefsHelperImpl(override val context: Context) : SharedPrefsHelper {
+class SharedPrefsHelperImpl(override val context: Context) : SharedPrefsHelper {
     companion object {
         /**
          * The preference name.

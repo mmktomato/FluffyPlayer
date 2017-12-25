@@ -1,15 +1,12 @@
 package jp.gr.java_conf.mmktomato.fluffyplayer
 
 import android.content.Intent
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.Toast
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
-import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelperImpl
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ActivityBase() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -19,8 +16,6 @@ class MainActivity : AppCompatActivity() {
 
         val listContents = listOf("Browse Dropbox files", "Settings")
         val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, listContents)
-        val sharedProfs = SharedPrefsHelperImpl(this)
-        val dbxProxy = DbxProxy(sharedProfs)
 
         val listView = findViewById<ListView>(R.id.mainListView)
         listView.adapter = adapter
@@ -28,7 +23,7 @@ class MainActivity : AppCompatActivity() {
             when (position) {
                 // Browse Dropbox files
                 0 -> {
-                    if (dbxProxy.isAuthenticated()) {
+                    if (dbxProxy.isAuthenticated) {
                         val intent = Intent(this, FileBrowseActivity::class.java)
                         startActivity(intent)
                     }
