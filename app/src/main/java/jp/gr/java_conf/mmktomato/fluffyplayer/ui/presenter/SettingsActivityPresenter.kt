@@ -46,7 +46,7 @@ internal class SettingsActivityPresenterImpl(
      */
     private fun setUiComponentListeners() {
         connectDropboxButton.setOnClickListener { v ->
-            if (dbxProxy.isAuthenticated()) {
+            if (dbxProxy.isAuthenticated) {
                 sharedPrefs.removeDbxAccessToken()
                 refreshUi()
             }
@@ -76,11 +76,11 @@ internal class SettingsActivityPresenterImpl(
      */
     override fun refreshUi() {
         viewModel.connectDropboxButtonText.set(
-                if (dbxProxy.isAuthenticated()) "disconnect" else "connect")
+                if (dbxProxy.isAuthenticated) "disconnect" else "connect")
 
         launch(UI) {
             viewModel.dropboxAuthStatusText.set(
-                    if (dbxProxy.isAuthenticated()) dbxProxy.getDisplayName().await() else "(not connected)")
+                    if (dbxProxy.isAuthenticated) dbxProxy.getDisplayName().await() else "(not connected)")
         }
     }
 }
