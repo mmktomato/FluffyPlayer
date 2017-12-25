@@ -66,6 +66,7 @@ internal class SettingsActivityPresenterImpl(
         if (isOAuth2Processing) {
             dbxProxy.saveAccessToken()
         }
+        isOAuth2Processing = false
 
         refreshUi()
     }
