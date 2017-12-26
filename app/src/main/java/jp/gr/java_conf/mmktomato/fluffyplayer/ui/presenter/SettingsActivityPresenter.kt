@@ -4,6 +4,7 @@ import android.widget.Button
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelper
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.SettingsActivityViewModel
+import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.launch
 
@@ -19,7 +20,12 @@ internal interface SettingsActivityPresenter {
     /**
      * Refreshes UI Component.
      */
-    fun refreshUi()
+    fun refreshUi(): Job
+
+    /**
+     * Called when the ConnectDropboxButton is clicked.
+     */
+    fun onConnectDropboxButtonClick()
 }
 
 /**
@@ -45,16 +51,7 @@ internal class SettingsActivityPresenterImpl(
      * add listeners to UI Components.
      */
     private fun setUiComponentListeners() {
-        connectDropboxButton.setOnClickListener { v ->
-            if (dbxProxy.isAuthenticated) {
-                sharedPrefs.removeDbxAccessToken()
-                refreshUi()
-            }
-            else {
-                isOAuth2Processing = true
-                dbxProxy.auth()
-            }
-        }
+        connectDropboxButton.setOnClickListener({ v -> onConnectDropboxButtonClick() })
     }
 
     override fun onCreate() {
@@ -74,13 +71,27 @@ internal class SettingsActivityPresenterImpl(
     /**
      * Refreshes UI Component.
      */
-    override fun refreshUi() {
+    override fun refreshUi(): Job {
         viewModel.connectDropboxButtonText.set(
                 if (dbxProxy.isAuthenticated) "disconnect" else "connect")
 
-        launch(UI) {
+        return launch(UI) {
             viewModel.dropboxAuthStatusText.set(
                     if (dbxProxy.isAuthenticated) dbxProxy.getDisplayName().await() else "(not connected)")
+        }
+    }
+
+    /**
+     * Called when the ConnectDropboxButton is clicked.
+     */
+    override fun onConnectDropboxButtonClick() {
+        if (dbxProxy.isAuthenticated) {
+            sharedPrefs.removeDbxAccessToken()
+            refreshUi()
+        }
+        else {
+            isOAuth2Processing = true
+            dbxProxy.auth()
         }
     }
 }
