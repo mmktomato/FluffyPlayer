@@ -1,9 +1,8 @@
 package jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter
 
 import android.content.Context
+import android.widget.Button
 import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_DBX_USER_NAME
-import jp.gr.java_conf.mmktomato.fluffyplayer.R
-import jp.gr.java_conf.mmktomato.fluffyplayer.SettingsActivity
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DaggerSettingsActivityPresenterTestComponent
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.AppModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.DbxModuleMock
@@ -11,14 +10,12 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.SharedPrefsModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelper
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.SettingsActivityViewModel
-import kotlinx.android.synthetic.main.activity_settings.view.*
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mockito
-import org.robolectric.Robolectric
+import org.mockito.Mockito.*
 import org.robolectric.RobolectricTestRunner
 import javax.inject.Inject
 
@@ -36,7 +33,6 @@ class SettingsActivityPresenterTest {
     @Inject
     lateinit var dbxProxy: DbxProxy
 
-    private val activity = Robolectric.setupActivity(SettingsActivity::class.java)
     private val viewModel = SettingsActivityViewModel()
     private lateinit var presenter: SettingsActivityPresenter
 
@@ -53,8 +49,49 @@ class SettingsActivityPresenterTest {
                 sharedPrefs = sharedPrefs,
                 dbxProxy = dbxProxy,
                 viewModel = viewModel,
-                connectDropboxButton = activity.findViewById(R.id.connectDropboxButton))
+                connectDropboxButton = Button(ctx))
+    }
 
+    /**
+     * Asserts values of `viewModel`.
+     */
+    private fun assertViewModel(dropboxAuthStatusText: String, connectDropboxButtonText: String) {
+        assertEquals(dropboxAuthStatusText, viewModel.dropboxAuthStatusText.get())
+        assertEquals(connectDropboxButtonText, viewModel.connectDropboxButtonText.get())
+    }
+
+    /**
+     * Asserts values of 'viewModel` when connected to the Dropbox.
+     */
+    private fun assertViewModelForConnected() {
+        assertViewModel(
+                dropboxAuthStatusText = DUMMY_DBX_USER_NAME,
+                connectDropboxButtonText = "disconnect")
+    }
+
+    /**
+     * Asserts values of `viewModel` when not connected to the Dropbox.
+     */
+    private fun assertViewModelForNotConnected() {
+        assertViewModel(
+                dropboxAuthStatusText = "(not connected)",
+                connectDropboxButtonText = "connect")
+    }
+
+    @Test
+    fun onCreate_WhenDropboxConnected() {
+        presenter.onCreate()
+
+        assertViewModelForConnected()
+    }
+
+    @Test
+    fun onCreate_WhenDropboxNotConnected() {
+        `when`(dbxProxy.isAuthenticated).thenReturn(false)
+
+        presenter.onCreate()
+
+        assertViewModelForNotConnected()
     }
 
     @Test
@@ -62,20 +99,44 @@ class SettingsActivityPresenterTest {
         runBlocking {
             presenter.refreshUi().join()
 
-            assertEquals(DUMMY_DBX_USER_NAME, viewModel.dropboxAuthStatusText.get())
-            assertEquals("disconnect", viewModel.connectDropboxButtonText.get())
+            assertViewModelForConnected()
         }
     }
 
     @Test
     fun refreshUi_WhenDropboxNotConnected() {
-        Mockito.`when`(dbxProxy.isAuthenticated).thenReturn(false)
+        `when`(dbxProxy.isAuthenticated).thenReturn(false)
 
         runBlocking {
             presenter.refreshUi().join()
 
-            assertEquals("(not connected)", viewModel.dropboxAuthStatusText.get())
-            assertEquals("connect", viewModel.connectDropboxButtonText.get())
+            assertViewModelForNotConnected()
         }
+    }
+
+    @Test
+    fun onConnectDropboxButtonClick_WhenDropboxConnected() {
+        presenter.onConnectDropboxButtonClick()
+
+        verify(sharedPrefs, times(1)).removeDbxAccessToken()
+    }
+
+    @Test
+    fun onConnectDropboxButtonClick_WhenDropboxNotConnected() {
+        `when`(dbxProxy.isAuthenticated).thenReturn(false)
+
+        presenter.onConnectDropboxButtonClick()
+
+        verify(dbxProxy, times(1)).auth()
+    }
+
+    @Test
+    fun onConnectDropboxButtonClick_AuthAndResume() {
+        `when`(dbxProxy.isAuthenticated).thenReturn(false)
+
+        presenter.onConnectDropboxButtonClick()
+        presenter.onResume()
+
+        verify(dbxProxy, times(1)).saveAccessToken()
     }
 }
