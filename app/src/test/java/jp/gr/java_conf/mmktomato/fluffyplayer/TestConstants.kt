@@ -1,5 +1,6 @@
 package jp.gr.java_conf.mmktomato.fluffyplayer
 
+const val DUMMY_MUSIC_URI = "dummy://dummyMusicUri"
 const val DUMMY_MUSIC_TITLE = "dummyMusicTitle"
 const val DUMMY_DBX_ACCESS_TOKEN = "dummyAccessToken"
 const val DUMMY_DBX_USER_NAME = "dummyUserName"
