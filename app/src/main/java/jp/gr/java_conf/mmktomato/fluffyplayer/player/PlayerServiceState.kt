@@ -9,7 +9,7 @@ package jp.gr.java_conf.mmktomato.fluffyplayer.player
  * @param onMusicChanged the listener of `svcBinder#onMusicChanged`.
  */
 internal class PlayerServiceState(
-        val binder: PlayerService.LocalBinder,
+        val binder: PlayerServiceBinder,
         var isBound: Boolean,
         private val onPlayerStateChangedListener: () -> Unit,
         private val onMusicChanged:() -> Unit) {

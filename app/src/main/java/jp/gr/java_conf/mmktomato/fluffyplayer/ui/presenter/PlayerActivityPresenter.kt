@@ -12,6 +12,7 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
 import jp.gr.java_conf.mmktomato.fluffyplayer.entity.MusicMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
+import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceBinder
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceState
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelper
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.PlayerActivityViewModel
@@ -87,7 +88,7 @@ internal interface PlayerActivityPresenter {
         val onPlayerStateChanged = { viewModel.isPlaying.set(svcState.binder.isPlaying) }
         val onMusicChanged = { resetUI() }
         svcState =  PlayerServiceState(
-                binder = binder as PlayerService.LocalBinder,
+                binder = binder as PlayerServiceBinder,
                 isBound = true,
                 onPlayerStateChangedListener = onPlayerStateChanged,
                 onMusicChanged = onMusicChanged)
