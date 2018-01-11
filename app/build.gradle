@@ -57,5 +57,6 @@ dependencies {
     kapt "com.google.dagger:dagger-compiler:2.14.1"
     kaptTest "com.google.dagger:dagger-compiler:2.14.1"
 
-    testCompile 'org.mockito:mockito-core:2.13.0'
+    //testCompile 'org.mockito:mockito-core:2.13.0'
+    testCompile 'org.mockito:mockito-inline:2.13.0'  // for mocking data class.
 }
