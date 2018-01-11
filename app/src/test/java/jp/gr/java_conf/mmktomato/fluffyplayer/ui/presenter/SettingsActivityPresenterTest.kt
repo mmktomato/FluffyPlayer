@@ -33,7 +33,7 @@ class SettingsActivityPresenterTest {
     @Inject
     lateinit var dbxProxy: DbxProxy
 
-    private val viewModel = SettingsActivityViewModel()
+    private lateinit var viewModel: SettingsActivityViewModel
     private lateinit var presenter: SettingsActivityPresenter
 
     @Before
@@ -45,6 +45,7 @@ class SettingsActivityPresenterTest {
                 .build()
                 .inject(this)
 
+        viewModel = SettingsActivityViewModel()
         presenter = SettingsActivityPresenterImpl(
                 sharedPrefs = sharedPrefs,
                 dbxProxy = dbxProxy,
