@@ -59,9 +59,16 @@ internal interface PlayerActivityPresenter {
      */
     val getString: (Int) -> String
 
+    /**
+     * a MediaMetadataRetriever.
+     */
+    val mediaMetadataRetriever: MediaMetadataRetriever
+
     fun onCreate()
 
     fun onDestroy() {
+        mediaMetadataRetriever.release()
+
         if (!isPlayerServiceInitialized) {
             return
         }
@@ -69,7 +76,7 @@ internal interface PlayerActivityPresenter {
         if (svcState.isBound) {
             unbindService()
         }
-        svcState.unbind()
+        unbindPlayerServiceState()
     }
 
     /**
@@ -189,6 +196,7 @@ internal interface PlayerActivityPresenter {
  * @param notificationManager the NotificationManager.
  * @param playButton the play button.
  * @param resources android's resource.
+ * @param mediaMetadataRetriever the mediaMetadataRetriever.
  */
 internal class PlayerActivityPresenterImpl(
         private val sharedPrefs: SharedPrefsHelper,
@@ -202,7 +210,8 @@ internal class PlayerActivityPresenterImpl(
         override val getString: (Int) -> String,
         private val notificationManager: NotificationManager,
         private val playButton: Button,
-        private val resources: Resources) : PlayerActivityPresenter {
+        private val resources: Resources,
+        override val mediaMetadataRetriever: MediaMetadataRetriever) : PlayerActivityPresenter {
 
     /**
      * the NotificationUseCase.
@@ -233,14 +242,13 @@ internal class PlayerActivityPresenterImpl(
      * Returns the music metadata.
      */
     override fun getMusicMetadata(uri: String): Deferred<MusicMetadata> = async {
-        val mmr = MediaMetadataRetriever()
-        mmr.setDataSource(uri, mapOf<String, String>())
+        mediaMetadataRetriever.setDataSource(uri, mapOf<String, String>())
 
         // title
-        val title = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+        val title = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
 
         // artwork
-        val artworkBytes: ByteArray? = mmr.embeddedPicture
+        val artworkBytes: ByteArray? = mediaMetadataRetriever.embeddedPicture
         val artworkDrawable = if (artworkBytes == null) {
             noArtworkImage
         } else {

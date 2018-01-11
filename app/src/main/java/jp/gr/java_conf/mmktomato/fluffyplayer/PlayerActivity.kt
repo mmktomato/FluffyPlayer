@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.databinding.DataBindingUtil
+import android.media.MediaMetadataRetriever
 import android.os.Bundle
 import android.os.IBinder
 import android.widget.Button
@@ -55,8 +56,8 @@ class PlayerActivity : ActivityBase() {
                 getString = ::getString,
                 notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager,
                 playButton = findViewById<Button>(R.id.playButton),
-                resources = resources
-        )
+                resources = resources,
+                mediaMetadataRetriever = MediaMetadataRetriever())
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
