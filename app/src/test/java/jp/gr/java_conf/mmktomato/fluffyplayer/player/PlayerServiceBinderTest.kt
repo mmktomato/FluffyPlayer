@@ -17,9 +17,10 @@ import javax.inject.Inject
  */
 //@RunWith(RobolectricTestRunner::class)
 class PlayerServiceBinderTest {
-    private data class ListenerCallState(
-            var isOnPlayerStateChagnedCalled: Boolean,
-            var isOnMusicChangedCallded: Boolean)
+    private interface CallbackHolder {
+        fun onPlayerStateChagned()
+        fun onMusicChanged()
+    }
 
     @Inject
     lateinit var player: MediaPlayer
@@ -28,7 +29,7 @@ class PlayerServiceBinderTest {
 
     private lateinit var listenerIndices: MutableList<Int>
 
-    private lateinit var listenerCallState: ListenerCallState
+    private lateinit var callbacks: CallbackHolder
 
     @Before
     fun setUp() {
@@ -39,14 +40,9 @@ class PlayerServiceBinderTest {
 
         binder = PlayerServiceBinder(player)
         listenerIndices = mutableListOf()
-        listenerCallState = ListenerCallState(false, false)
-
-        binder.addOnPlayerStateChangedListener {
-            listenerCallState.isOnPlayerStateChagnedCalled = true
-        }
-        binder.addOnMusicChangedListener {
-            listenerCallState.isOnMusicChangedCallded = true
-        }
+        callbacks = mock(CallbackHolder::class.java)
+        binder.addOnPlayerStateChangedListener(callbacks::onPlayerStateChagned)
+        binder.addOnMusicChangedListener(callbacks::onMusicChanged)
     }
 
     @After
@@ -73,7 +69,7 @@ class PlayerServiceBinderTest {
         binder.start()
 
         verify(player, times(1)).start()
-        assertTrue(listenerCallState.isOnPlayerStateChagnedCalled)
+        verify(callbacks, times(1)).onPlayerStateChagned()
     }
 
     @Test
@@ -81,7 +77,7 @@ class PlayerServiceBinderTest {
         binder.pause()
 
         verify(player, times(1)).pause()
-        assertTrue(listenerCallState.isOnPlayerStateChagnedCalled)
+        verify(callbacks, times(1)).onPlayerStateChagned()
     }
 
     @Test
@@ -89,8 +85,8 @@ class PlayerServiceBinderTest {
         binder.reset()
 
         verify(player, times(1)).reset()
-        assertTrue(listenerCallState.isOnPlayerStateChagnedCalled)
-        assertTrue(listenerCallState.isOnMusicChangedCallded)
+        verify(callbacks, times(1)).onPlayerStateChagned()
+        verify(callbacks, times(1)).onMusicChanged()
     }
 
     @Test
