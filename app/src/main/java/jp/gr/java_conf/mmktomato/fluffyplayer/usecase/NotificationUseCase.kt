@@ -12,7 +12,7 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
 /**
  * Business logics for Notification.
  */
-internal class NotificationUseCase {
+class NotificationUseCase {
     /**
      * Returns a now playing notification.
      *

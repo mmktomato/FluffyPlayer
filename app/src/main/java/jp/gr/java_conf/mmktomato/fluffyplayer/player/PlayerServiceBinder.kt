@@ -8,7 +8,7 @@ import android.os.Binder
  *
  * @param player a media player.
  */
-internal class PlayerServiceBinder(private val player: MediaPlayer) : Binder() {
+class PlayerServiceBinder(private val player: MediaPlayer) : Binder() {
     /**
      * the counter of listener
      */

@@ -59,4 +59,7 @@ dependencies {
 
     //testCompile 'org.mockito:mockito-core:2.13.0'
     testCompile 'org.mockito:mockito-inline:2.13.0'  // for mocking data class.
+
+    implementation "android.arch.persistence.room:runtime:1.0.0"
+    kapt "android.arch.persistence.room:compiler:1.0.0"
 }
