@@ -17,6 +17,7 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.PlayerActivityPresenter
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.PlayerActivityPresenterImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.PlayerActivityViewModel
+import kotlinx.coroutines.experimental.runBlocking
 
 class PlayerActivity : ActivityBase() {
     private lateinit var presenter: PlayerActivityPresenter
@@ -67,6 +68,7 @@ class PlayerActivity : ActivityBase() {
         setContentView(R.layout.activity_player)
 
         initializePresenter()
+
         presenter.onCreate()
     }
 

@@ -7,9 +7,11 @@ import android.content.Intent
 import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.widget.Button
+import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_DBX_FILE_PATH
 import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_MUSIC_TITLE
 import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_MUSIC_URI
 import jp.gr.java_conf.mmktomato.fluffyplayer.R
+import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DaggerPlayerActivityPresenterTestComponent
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.AppModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.DbxModuleMock
@@ -23,6 +25,7 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceBinder
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceState
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelper
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.PlayerActivityViewModel
+import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Assert.*
 import org.junit.Before
@@ -30,6 +33,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.*
 import org.robolectric.RobolectricTestRunner
+import java.util.*
 import javax.inject.Inject
 import javax.inject.Named
 
@@ -92,6 +96,7 @@ class PlayerActivityPresenterTest {
                 dbxProxy = dbxProxy,
                 viewModel = viewModel,
                 dbxMetadata = dbxFileMetadata,
+                nowPlayingItem = null,
                 playerServiceIntent = playerServiceIntent,
                 startService = callbacks::startService,
                 bindService = callbacks::bindService,
@@ -101,10 +106,13 @@ class PlayerActivityPresenterTest {
                 playButton = Button(ctx),
                 resources = ctx.resources,
                 mediaMetadataRetriever = mediaMetadataRetriever)
+        runBlocking {
+            presenter.onCreate().join()
+        }
     }
 
     /**
-     * Prepares `presenter.svcState`.
+     * Prepares dummy `presenter.svcState`.
      *
      * @param isBound initial value of `isBound`.
      */
@@ -119,10 +127,18 @@ class PlayerActivityPresenterTest {
 
     @Test
     fun onCreate() {
-        presenter.onCreate()
+        // TODO: add tests for launched by FileBrowseActivity, launched by Notification, etc...
+
+        //presenter.onCreate().join()
 
         val intentMetadata = playerServiceIntent.getSerializableExtra("dbxMetadata")
         assertEquals(dbxFileMetadata, intentMetadata)
+
+        val intentPlaylistItem = playerServiceIntent.getSerializableExtra("nowPlayingItem")
+        assertEquals(presenter.nowPlayingItem!!, intentPlaylistItem)
+        assertEquals(DUMMY_DBX_FILE_PATH, presenter.nowPlayingItem!!.path)
+        assertEquals(PlaylistItem.Status.WAIT, presenter.nowPlayingItem!!.status)
+
         verify(callbacks, times(1)).startService(playerServiceIntent)
         verify(callbacks, times(1)).bindService(playerServiceIntent)
     }
@@ -195,6 +211,9 @@ class PlayerActivityPresenterTest {
         assertFalse(viewModel.isPlaying.get())
         verify(notificationManager, times(1)).notify(eq(PlayerService.NOTIFICATION_ID), any(Notification::class.java))
         verify(player, times(1)).start()
+
+        assertEquals(PlaylistItem.Status.PLAYING, presenter.nowPlayingItem!!.status)
+
         assertTrue(presenter.isPlayerServiceInitialized)
     }
 
