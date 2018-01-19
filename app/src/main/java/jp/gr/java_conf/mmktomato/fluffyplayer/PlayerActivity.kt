@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.os.IBinder
 import android.widget.Button
 import jp.gr.java_conf.mmktomato.fluffyplayer.databinding.ActivityPlayerBinding
+import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.PlayerActivityPresenter
@@ -48,7 +49,8 @@ class PlayerActivity : ActivityBase() {
                 sharedPrefs = sharedPrefs,
                 dbxProxy = dbxProxy,
                 viewModel = viewModel,
-                dbxMetadata = intent.getSerializableExtra("dbxMetadata") as DbxNodeMetadata,
+                dbxMetadata = intent.getSerializableExtra("dbxMetadata") as DbxNodeMetadata?,
+                nowPlayingItem = intent.getSerializableExtra("nowPlayingItem") as PlaylistItem?,
                 playerServiceIntent = playerServiceIntent,
                 startService = { intent -> startService(intent) },
                 bindService = { intent -> bindService(intent, connection, Context.BIND_AUTO_CREATE) },

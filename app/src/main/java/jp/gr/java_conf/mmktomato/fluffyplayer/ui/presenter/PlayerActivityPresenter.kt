@@ -24,6 +24,7 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.PlayerActivityViewMod
 import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.NotificationUseCase
 import kotlinx.coroutines.experimental.*
 import java.io.ByteArrayInputStream
+import java.util.*
 import javax.inject.Inject
 
 /**
@@ -51,9 +52,9 @@ internal interface PlayerActivityPresenter {
     var svcState: PlayerServiceState
 
     /**
-     * a Dropbox's node metadata.
+     * the now playing item.
      */
-    val dbxMetadata: DbxNodeMetadata
+    val nowPlayingItem: PlaylistItem?
 
     /**
      * indicates whether the PlayerService is initialized.
@@ -134,6 +135,9 @@ internal interface PlayerActivityPresenter {
         updateNotification(musicMetadata)
         if (!svcState.binder.isPlaying) {
             svcState.binder.start()
+
+            nowPlayingItem!!.status = PlaylistItem.Status.PLAYING
+            db.playlistDao.update(nowPlayingItem!!)
         }
 
         isPlayerServiceInitialized = true
@@ -199,6 +203,7 @@ internal interface PlayerActivityPresenter {
  * @param dbxProxy the Dropbox API Proxy.
  * @param viewModel the view model.
  * @param dbxMetadata the Dropbox's node metadata.
+ * @param nowPlayingItem the now playing item.
  * @param playerServiceIntent the player service intent.
  * @param startService the callback to start a service.
  * @param bindService the callback to bind a service.
@@ -213,7 +218,8 @@ class PlayerActivityPresenterImpl(
         private val sharedPrefs: SharedPrefsHelper,
         private val dbxProxy: DbxProxy,
         override val viewModel: PlayerActivityViewModel,
-        override val dbxMetadata: DbxNodeMetadata,
+        private val dbxMetadata: DbxNodeMetadata?,
+        override var nowPlayingItem: PlaylistItem?,
         private val playerServiceIntent: Intent,
         private val startService: (Intent) -> Unit,
         private val bindService: (Intent) -> Unit,
@@ -259,8 +265,20 @@ class PlayerActivityPresenterImpl(
         playButton.setOnClickListener { v -> onPlayButtonClick() }
 
         launch(CommonPool) {
-            db.playlistDao.insert(PlaylistItem(dbxMetadata.path, PlaylistItem.Status.WAIT))
+            if (dbxMetadata != null) {
+                val id = UUID.randomUUID().toString()
+                nowPlayingItem = PlaylistItem(id, dbxMetadata.path, PlaylistItem.Status.WAIT)
+
+                db.playlistDao.deleteAll()
+                db.playlistDao.insert(nowPlayingItem!!)
+            }
+            else if (nowPlayingItem == null) {
+                nowPlayingItem = db.playlistDao.getNowPlaying()
+            }
+
             playerServiceIntent.putExtra("dbxMetadata", dbxMetadata)
+            playerServiceIntent.putExtra("nowPlayingItem", nowPlayingItem)
+
             startService(playerServiceIntent)
             bindService(playerServiceIntent)
         }
@@ -292,7 +310,7 @@ class PlayerActivityPresenterImpl(
      * Returns a music uri.
      */
     override fun getMusicUri(): Deferred<String> {
-        return dbxProxy.getTemporaryLink(dbxMetadata.path)
+        return dbxProxy.getTemporaryLink(nowPlayingItem!!.path)
     }
 
     /**
@@ -302,7 +320,7 @@ class PlayerActivityPresenterImpl(
      */
     override fun updateNotification(metadata: MusicMetadata) {
         val notification = notificationUseCase.createNowPlayingNotification(
-                sharedPrefs.context, dbxMetadata, metadata.title ?: getString(R.string.unknown_music_title))
+                sharedPrefs.context, nowPlayingItem!!, metadata.title ?: getString(R.string.unknown_music_title))
 
         notificationManager.notify(PlayerService.NOTIFICATION_ID, notification)
     }

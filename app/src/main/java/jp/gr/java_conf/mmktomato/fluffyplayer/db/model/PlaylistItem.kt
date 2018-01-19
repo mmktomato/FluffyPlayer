@@ -2,6 +2,7 @@ package jp.gr.java_conf.mmktomato.fluffyplayer.db.model
 
 import android.arch.persistence.room.*
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.DbTypeConverters
+import java.io.Serializable
 
 /**
  * A playlist item.
@@ -12,15 +13,22 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.db.DbTypeConverters
 @Entity(tableName = "playlist")
 @TypeConverters(DbTypeConverters::class)
 class PlaylistItem(
+        @PrimaryKey
+        @ColumnInfo(name = "id")
+        var id: String,
+
         @ColumnInfo(name = "path")
         var path: String,
 
         @ColumnInfo(name = "status")
-        var status: Status) {
+        var status: Status) : Serializable {
 
-    @PrimaryKey(autoGenerate = true)
-    @ColumnInfo(name = "id")
-    var id = 0
+    companion object {
+        /**
+         * the now playing status value.
+         */
+        const val PLAYING_STATUS_VALUE = 1
+    }
 
     /**
      * A playlist item status.
@@ -36,7 +44,7 @@ class PlaylistItem(
         /**
          * Now playing.
          */
-        PLAYING(1),
+        PLAYING(PLAYING_STATUS_VALUE),
 
         /**
          * Already played.
@@ -54,7 +62,13 @@ interface PlaylistItemDao {
      * Returns first item of playlist.
      */
     @Query("select * from playlist order by id limit 1")
-    fun getFirst(): PlaylistItem
+    fun getFirst(): PlaylistItem?
+
+    /**
+     * Returns now playing item of playlist.
+     */
+    @Query("select * from playlist where status = ${PlaylistItem.PLAYING_STATUS_VALUE}")
+    fun getNowPlaying(): PlaylistItem?
 
     /**
      * Inserts a PlaylistItem.
