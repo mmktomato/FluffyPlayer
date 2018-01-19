@@ -76,7 +76,7 @@ internal interface PlayerActivityPresenter {
      */
     val mediaMetadataRetriever: MediaMetadataRetriever
 
-    fun onCreate()
+    fun onCreate(): Job
 
     fun onDestroy() {
         mediaMetadataRetriever.release()
@@ -259,20 +259,20 @@ class PlayerActivityPresenterImpl(
                 .inject(this)
     }
 
-    override fun onCreate() {
+    override fun onCreate(): Job {
         resetUI()
 
         playButton.setOnClickListener { v -> onPlayButtonClick() }
 
-        launch(CommonPool) {
+        return launch {
+            // Start playing new music when launched by FileBrowseActivity.
             if (dbxMetadata != null) {
                 val id = UUID.randomUUID().toString()
                 nowPlayingItem = PlaylistItem(id, dbxMetadata.path, PlaylistItem.Status.WAIT)
 
                 db.playlistDao.deleteAll()
                 db.playlistDao.insert(nowPlayingItem!!)
-            }
-            else if (nowPlayingItem == null) {
+            } else if (nowPlayingItem == null) {
                 nowPlayingItem = db.playlistDao.getNowPlaying()
             }
 
