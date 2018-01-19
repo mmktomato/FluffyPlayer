@@ -7,6 +7,7 @@ import android.media.MediaPlayer
 import android.os.IBinder
 import android.util.Log
 import jp.gr.java_conf.mmktomato.fluffyplayer.R
+import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.AppPrefs
 import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.NotificationUseCase
@@ -33,14 +34,14 @@ internal class PlayerService : Service() {
     private val binder: PlayerServiceBinder
 
     /**
-     * the Dropbox's metadata.
-     */
-    private lateinit var dbxMetadata: DbxNodeMetadata
-
-    /**
      * the NotificationUseCase.
      */
     private val notificationUseCase = NotificationUseCase()
+
+    /**
+     * whether this service is started.
+     */
+    private var isServiceStarted = false
 
     init {
         binder = PlayerServiceBinder(player)
@@ -51,25 +52,21 @@ internal class PlayerService : Service() {
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        val intentMetadata = intent.getSerializableExtra("dbxMetadata") as DbxNodeMetadata
-        var isServiceStarted = false
+        val dbxMetadata = intent.getSerializableExtra("dbxMetadata") as DbxNodeMetadata?
+        val nowPlayingItem = intent.getSerializableExtra("nowPlayingItem") as PlaylistItem
 
-        if (this::dbxMetadata.isInitialized) {
-            isServiceStarted = true
-
-            if (dbxMetadata.path != intentMetadata.path) {
-                binder.reset()
-            }
+        if (dbxMetadata != null) {
+            binder.reset()
         }
-        dbxMetadata = intentMetadata
 
         if (!isServiceStarted) {
             // start foreground.
             val notification = notificationUseCase.createNowPlayingNotification(
-                    this, dbxMetadata, getString(R.string.now_loading_text))
+                    this, nowPlayingItem, getString(R.string.now_loading_text))
             startForeground(NOTIFICATION_ID, notification)
         }
 
+        isServiceStarted = true
         return START_STICKY
     }
 

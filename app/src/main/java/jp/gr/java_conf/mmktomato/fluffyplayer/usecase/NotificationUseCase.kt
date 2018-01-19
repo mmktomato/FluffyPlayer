@@ -7,6 +7,7 @@ import android.content.Intent
 import android.support.v4.app.NotificationCompat
 import jp.gr.java_conf.mmktomato.fluffyplayer.PlayerActivity
 import jp.gr.java_conf.mmktomato.fluffyplayer.R
+import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
 
 /**
@@ -17,12 +18,12 @@ class NotificationUseCase {
      * Returns a now playing notification.
      *
      * @param ctx an android context.
-     * @param dbxMetadata a DbxMetadata to pass the PlayerActivity via Intent.
+     * @param nowPlayingItem a PlaylistItem to pass the PlayerActivity via Intent.
      * @param musicTitle a music title to be shown on notification.
      */
-    internal fun createNowPlayingNotification(ctx: Context, dbxMetadata: DbxNodeMetadata, musicTitle: String): Notification {
+    internal fun createNowPlayingNotification(ctx: Context, nowPlayingItem: PlaylistItem, musicTitle: String): Notification {
         val notificationIntent = Intent(ctx, PlayerActivity::class.java)
-        notificationIntent.putExtra("dbxMetadata", dbxMetadata)
+        notificationIntent.putExtra("nowPlayingItem", nowPlayingItem)
         val pendingIntent = PendingIntent.getActivities(
                 ctx, 0, arrayOf(notificationIntent), PendingIntent.FLAG_UPDATE_CURRENT)
 
