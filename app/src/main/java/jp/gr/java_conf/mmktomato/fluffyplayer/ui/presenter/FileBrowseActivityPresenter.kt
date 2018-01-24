@@ -1,6 +1,7 @@
 package jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter
 
 import android.content.Intent
+import android.support.v7.widget.Toolbar
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ListView
@@ -89,16 +90,20 @@ internal interface FileBrowseActivityPresenter {
  * @param dbxProxy a DbxProxy.
  * @param inflater a LayoutInflater.
  * @param filesListView a ListView to list files.
+ * @param toolBar a ToolBar.
  * @param getDbxPath a callback that returns a Dropbox folder path.
  * @param startActivity a callback to start an activity.
+ * @param setSupportActionBar a callback to set action bar.
  */
 internal class FileBrowseActivityPresenterImpl(
         private val sharedPrefs: SharedPrefsHelper,
         override val dbxProxy: DbxProxy,
         private val inflater: LayoutInflater,
         private val filesListView: ListView,
+        private val toolBar: Toolbar,
         override val getDbxPath: () -> String?,
-        private val startActivity: (Intent) -> Unit) : FileBrowseActivityPresenter {
+        private val startActivity: (Intent) -> Unit,
+        private val setSupportActionBar: (Toolbar) -> Unit) : FileBrowseActivityPresenter {
     /**
      * A filesListView's adapter.
      */
@@ -149,6 +154,10 @@ internal class FileBrowseActivityPresenterImpl(
                 onFilesListViewItemClick(dbxMetadata)
             }
         }
+
+        // toolBar
+        toolBar.setTitle(R.string.folder)
+        setSupportActionBar(toolBar)
     }
 
     /**
