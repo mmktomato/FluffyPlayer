@@ -3,4 +3,6 @@
     <string name="title_activity_file_browse">FileBrowseActivity</string>
     <string name="now_loading_text">(Loading...)</string>
     <string name="unknown_music_title">(Unknown)</string>
+    <string name="folder">Folder</string>
+    <string name="playback_folder">Playback this folder</string>
 </resources>
