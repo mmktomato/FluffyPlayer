@@ -19,7 +19,7 @@ import javax.inject.Inject
 class PlayerServiceBinderTest {
     private interface CallbackHolder {
         fun onPlayerStateChagned()
-        fun onMusicChanged()
+        fun onMusicFinished()
     }
 
     @Inject
@@ -42,14 +42,14 @@ class PlayerServiceBinderTest {
         listenerIndices = mutableListOf()
         callbacks = mock(CallbackHolder::class.java)
         binder.addOnPlayerStateChangedListener(callbacks::onPlayerStateChagned)
-        binder.addOnMusicChangedListener(callbacks::onMusicChanged)
+        binder.addOnMusicFinishedListener(callbacks::onMusicFinished)
     }
 
     @After
     fun tearDown() {
         listenerIndices.forEach { index ->
             binder.removeOnPlayerStateChangedListener(index)
-            binder.removeOnMusicChangedListener(index)
+            binder.removeOnMusicFinishedListener(index)
         }
         player.release()
     }
@@ -86,7 +86,7 @@ class PlayerServiceBinderTest {
 
         verify(player, times(1)).reset()
         verify(callbacks, times(1)).onPlayerStateChagned()
-        verify(callbacks, times(1)).onMusicChanged()
+        verify(callbacks, times(1)).onMusicFinished()
     }
 
     @Test

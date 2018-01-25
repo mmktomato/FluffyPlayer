@@ -25,7 +25,6 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceBinder
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceState
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelper
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.PlayerActivityViewModel
-import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Assert.*
 import org.junit.Before
@@ -33,7 +32,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.*
 import org.robolectric.RobolectricTestRunner
-import java.util.*
 import javax.inject.Inject
 import javax.inject.Named
 
@@ -58,8 +56,8 @@ class PlayerActivityPresenterTest {
     lateinit var dbxProxy: DbxProxy
 
     @Inject
-    @field:Named("File")
-    lateinit var dbxFileMetadata: DbxNodeMetadata
+    @field:Named("FileArray")
+    lateinit var dbxFileMetadataArray: Array<DbxNodeMetadata>
 
     @Inject
     lateinit var player: MediaPlayer
@@ -95,7 +93,7 @@ class PlayerActivityPresenterTest {
                 sharedPrefs = sharedPrefs,
                 dbxProxy = dbxProxy,
                 viewModel = viewModel,
-                dbxMetadataArray = arrayOf(dbxFileMetadata),
+                dbxMetadataArray = dbxFileMetadataArray,
                 nowPlayingItem = null,
                 playerServiceIntent = playerServiceIntent,
                 startService = callbacks::startService,
@@ -121,7 +119,7 @@ class PlayerActivityPresenterTest {
         presenter.svcState = PlayerServiceState(
                 binder = PlayerServiceBinder(player),
                 isBound = isBound,
-                onMusicChanged = { },
+                onMusicFinished = { },
                 onPlayerStateChangedListener = { })
     }
 
@@ -132,7 +130,7 @@ class PlayerActivityPresenterTest {
         //presenter.onCreate().join()
 
         val intentMetadataArray = playerServiceIntent.getSerializableExtra("dbxMetadataArray") as Array<DbxNodeMetadata>
-        assertArrayEquals(arrayOf(dbxFileMetadata), intentMetadataArray)
+        assertArrayEquals(dbxFileMetadataArray, intentMetadataArray)
 
         val intentPlaylistItem = playerServiceIntent.getSerializableExtra("nowPlayingItem")
         assertEquals(presenter.nowPlayingItem!!, intentPlaylistItem)
@@ -194,9 +192,6 @@ class PlayerActivityPresenterTest {
             presenter.initializePlayerServiceState(PlayerServiceBinder(player)).join()
         }
 
-        assertEquals(DUMMY_MUSIC_TITLE, viewModel.title.get())
-        assertTrue(viewModel.isPlaying.get())
-        verify(notificationManager, times(1)).notify(eq(PlayerService.NOTIFICATION_ID), any(Notification::class.java))
         verify(player, times(0)).start()
         assertTrue(presenter.isPlayerServiceInitialized)
     }
@@ -207,14 +202,46 @@ class PlayerActivityPresenterTest {
             presenter.initializePlayerServiceState(PlayerServiceBinder(player)).join()
         }
 
+        verify(player, times(1)).start()
+        assertTrue(presenter.isPlayerServiceInitialized)
+    }
+
+    @Test
+    fun onMusicFinished() {
+        prepareDummyPlayerServiceState(true)
+
+        runBlocking {
+            presenter.onMusicFinished().join()
+        }
+
+        assertEquals(2, presenter.nowPlayingItem!!.order)
+        assertEquals(PlaylistItem.Status.PLAYING.value, presenter.nowPlayingItem!!.status.value)
+
+        verify(player, times(1)).start()
+    }
+
+    @Test
+    fun startRefreshUI() {
+        runBlocking {
+            presenter.startRefreshUI(DUMMY_MUSIC_URI).await()
+        }
+
         assertEquals(DUMMY_MUSIC_TITLE, viewModel.title.get())
-        assertFalse(viewModel.isPlaying.get())
+    }
+
+    @Test
+    fun startMusicWithRefreshUI() {
+        prepareDummyPlayerServiceState(true)
+
+        runBlocking {
+            presenter.startMusicWithRefreshUi(DUMMY_MUSIC_URI).join()
+        }
+
+        //assertTrue(viewModel.isPlaying.get())
+        assertEquals(DUMMY_MUSIC_TITLE, viewModel.title.get())
         verify(notificationManager, times(1)).notify(eq(PlayerService.NOTIFICATION_ID), any(Notification::class.java))
         verify(player, times(1)).start()
-
         assertEquals(PlaylistItem.Status.PLAYING, presenter.nowPlayingItem!!.status)
-
-        assertTrue(presenter.isPlayerServiceInitialized)
     }
 
     @Test

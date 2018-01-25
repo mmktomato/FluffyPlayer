@@ -33,6 +33,14 @@ class DbxModuleMock(private val isAuthenticated: Boolean) {
     fun provideDbxFileMetadata(): DbxNodeMetadata = createDbxNodeMetadataMock(true)
 
     @Provides
+    @Named("FileArray")
+    fun provideDbxFileMetadataArray(): Array<DbxNodeMetadata> {
+        return arrayOf(
+                createDbxNodeMetadataMock(true),
+                createDbxNodeMetadataMock(true))
+    }
+
+    @Provides
     @Named("Directory")
     fun provideDbxDirectoryMetadata(): DbxNodeMetadata = createDbxNodeMetadataMock(false)
 

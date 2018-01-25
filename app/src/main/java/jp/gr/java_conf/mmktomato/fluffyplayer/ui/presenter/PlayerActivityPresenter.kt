@@ -105,42 +105,61 @@ internal interface PlayerActivityPresenter {
      */
     fun initializePlayerServiceState(binder: IBinder?) = launch(CommonPool) {
         val onPlayerStateChanged = { viewModel.isPlaying.set(svcState.binder.isPlaying) }
-        val onMusicChanged = { resetUI() }
         svcState =  PlayerServiceState(
                 binder = binder as PlayerServiceBinder,
                 isBound = true,
                 onPlayerStateChangedListener = onPlayerStateChanged,
-                onMusicChanged = onMusicChanged)
+                onMusicFinished = { onMusicFinished() })
 
         onPlayerStateChanged()
 
         val musicUri = getMusicUri().await()
-        val musicMetadataDeferred = async {
-            /**
-             * TODO: if the currently played music is not changed, to retrieve metadata is not needed.
-             * but to set metadata to UI is needed. so the metadata must be stored somewhere.
-             */
-            getMusicMetadata(musicUri).await()
-        }
-        val preparePlayerJob = launch {
-            if (!svcState.binder.isPlaying) {
-                svcState.binder.prepare(musicUri)  // suspend function.
-            }
-        }
 
-        val musicMetadata = musicMetadataDeferred.await()
-        preparePlayerJob.join()
+        when (svcState.binder.isPlaying) {
+            true ->  startRefreshUI(musicUri)
+            false -> startMusicWithRefreshUi(musicUri)
+        }.join()
 
+        isPlayerServiceInitialized = true
+    }
+
+    /**
+     * The callback of `onMusicFinished`.
+     */
+    fun onMusicFinished(): Job
+
+    /**
+     * Fetches music metadata and refreshes UI.
+     *
+     * @param uri the music uri.
+     */
+    fun startRefreshUI(uri: String) = async {
+        val musicMetadata = getMusicMetadata(uri).await()
         setMusicMetadata(musicMetadata)
-        updateNotification(musicMetadata)
-        if (!svcState.binder.isPlaying) {
-            svcState.binder.start()
+
+        return@async musicMetadata
+    }
+
+    /**
+     * Starts the music with refreshing UI.
+     *
+     * @param uri the music uri.
+     */
+    suspend fun startMusicWithRefreshUi(uri: String) = launch {
+        val refreshUiDeferred = startRefreshUI(uri)
+        val startMusicJob =  launch {
+            svcState.binder.prepare(uri)  // suspend function.
 
             nowPlayingItem!!.status = PlaylistItem.Status.PLAYING
             db.playlistDao.update(nowPlayingItem!!)
+
+            svcState.binder.start()
         }
 
-        isPlayerServiceInitialized = true
+        val musicMetadata = refreshUiDeferred.await()
+        startMusicJob.join()
+
+        updateNotification(musicMetadata)
     }
 
     /**
@@ -270,10 +289,11 @@ class PlayerActivityPresenterImpl(
                 db.playlistDao.deleteAll()
                 dbxMetadataArray.forEachIndexed { index, dbxMetadata ->
                     val id = UUID.randomUUID().toString()
-                    val playlistItem = PlaylistItem(id, dbxMetadata.path, PlaylistItem.Status.WAIT)
+                    val order = index + 1
+                    val playlistItem = PlaylistItem(id, order, dbxMetadata.path, PlaylistItem.Status.WAIT)
                     db.playlistDao.insert(playlistItem)
 
-                    if (index == 0) {
+                    if (order == 1) {
                         nowPlayingItem = playlistItem
                     }
                 }
@@ -287,6 +307,27 @@ class PlayerActivityPresenterImpl(
 
             startService(playerServiceIntent)
             bindService(playerServiceIntent)
+        }
+    }
+
+    /**
+     * The callback of `onMusicFinished`.
+     */
+    override fun onMusicFinished() = launch {
+        resetUI()
+
+        nowPlayingItem!!.status = PlaylistItem.Status.PLAYED
+        db.playlistDao.update(nowPlayingItem!!)
+
+        val nextItem = db.playlistDao.getNext()
+        if (nextItem != null) {
+            nextItem.status = PlaylistItem.Status.PLAYING
+
+            nowPlayingItem = nextItem
+            db.playlistDao.update(nowPlayingItem!!)
+
+            val musicUri = getMusicUri().await()
+            startMusicWithRefreshUi(musicUri).join()
         }
     }
 
