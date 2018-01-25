@@ -7,6 +7,8 @@ import java.io.Serializable
 /**
  * A playlist item.
  *
+ * @param id the primary key.
+ * @param order the order of this item.
  * @param path the Dropbox's path.
  * @param status the playing status.
  */
@@ -17,6 +19,9 @@ class PlaylistItem(
         @ColumnInfo(name = "id")
         var id: String,
 
+        @ColumnInfo(name = "order")
+        var order: Int,
+
         @ColumnInfo(name = "path")
         var path: String,
 
@@ -25,9 +30,14 @@ class PlaylistItem(
 
     companion object {
         /**
+         * the waiting status value.
+         */
+        const val STATUS_VALUE_WAIT = 0
+
+        /**
          * the now playing status value.
          */
-        const val PLAYING_STATUS_VALUE = 1
+        const val STATUS_VALUE_PLAYING = 1
     }
 
     /**
@@ -39,12 +49,12 @@ class PlaylistItem(
         /**
          * Not played.
          */
-        WAIT(0),
+        WAIT(STATUS_VALUE_WAIT),
 
         /**
          * Now playing.
          */
-        PLAYING(PLAYING_STATUS_VALUE),
+        PLAYING(STATUS_VALUE_PLAYING),
 
         /**
          * Already played.
@@ -59,15 +69,15 @@ class PlaylistItem(
 @Dao
 interface PlaylistItemDao {
     /**
-     * Returns first item of playlist.
+     * Returns next waiting item of playlist.
      */
-    @Query("select * from playlist order by id limit 1")
-    fun getFirst(): PlaylistItem?
+    @Query("select * from playlist where status = ${PlaylistItem.STATUS_VALUE_WAIT} order by [order] limit 1")
+    fun getNext(): PlaylistItem?
 
     /**
      * Returns now playing item of playlist.
      */
-    @Query("select * from playlist where status = ${PlaylistItem.PLAYING_STATUS_VALUE}")
+    @Query("select * from playlist where status = ${PlaylistItem.STATUS_VALUE_PLAYING}")
     fun getNowPlaying(): PlaylistItem?
 
     /**

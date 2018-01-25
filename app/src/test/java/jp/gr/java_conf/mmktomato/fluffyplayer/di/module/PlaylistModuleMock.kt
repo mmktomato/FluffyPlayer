@@ -11,6 +11,6 @@ class PlaylistModuleMock(private val playlistItemStatus: PlaylistItem.Status) {
     @Provides
     fun providePlaylistItem(): PlaylistItem {
         val id = UUID.randomUUID().toString()
-        return PlaylistItem(id, DUMMY_DBX_FILE_PATH, playlistItemStatus)
+        return PlaylistItem(id, 1, DUMMY_DBX_FILE_PATH, playlistItemStatus)
     }
 }

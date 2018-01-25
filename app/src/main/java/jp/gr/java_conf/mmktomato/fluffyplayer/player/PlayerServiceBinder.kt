@@ -20,9 +20,9 @@ class PlayerServiceBinder(private val player: MediaPlayer) : Binder() {
     private val onPlayerStateChangedListeners = mutableMapOf<Int, () -> Unit>()
 
     /**
-     * the map of listeners for onMusicChanged.
+     * the map of listeners for onMusicFinished.
      */
-    private val onMusicChangedListeners = mutableMapOf<Int, () -> Unit>()
+    private val onMusicFinishedListeners = mutableMapOf<Int, () -> Unit>()
 
     /**
      * Prepares dataSource.
@@ -59,7 +59,7 @@ class PlayerServiceBinder(private val player: MediaPlayer) : Binder() {
         notifyOnPlayerStateChanged()
 
         player.reset()
-        notifyOnMusicChanged()
+        notifyOnMusicFinished()
     }
 
     /**
@@ -90,12 +90,12 @@ class PlayerServiceBinder(private val player: MediaPlayer) : Binder() {
     }
 
     /**
-     * Adds listener for onMusicChanged.
+     * Adds listener for onMusicFinished.
      *
      * @param listener the listener to add.
      */
-    fun addOnMusicChangedListener(listener: () -> Unit): Int {
-        onMusicChangedListeners.put(++listenerCounter, listener)
+    fun addOnMusicFinishedListener(listener: () -> Unit): Int {
+        onMusicFinishedListeners.put(++listenerCounter, listener)
         return listenerCounter
     }
 
@@ -109,12 +109,12 @@ class PlayerServiceBinder(private val player: MediaPlayer) : Binder() {
     }
 
     /**
-     * Removes listener for onMusicChanged.
+     * Removes listener for onMusicFinished.
      *
      * @param index the listener index.
      */
-    fun removeOnMusicChangedListener(index: Int) {
-        onMusicChangedListeners.remove(index)
+    fun removeOnMusicFinishedListener(index: Int) {
+        onMusicFinishedListeners.remove(index)
     }
 
     /**
@@ -125,10 +125,10 @@ class PlayerServiceBinder(private val player: MediaPlayer) : Binder() {
     }
 
     /**
-     * Notifies onMusicChanged.
+     * Notifies onMusicFinished.
      */
-    private fun notifyOnMusicChanged() {
-        onMusicChangedListeners.values.forEach { it.invoke() }
+    private fun notifyOnMusicFinished() {
+        onMusicFinishedListeners.values.forEach { it.invoke() }
     }
 }
 

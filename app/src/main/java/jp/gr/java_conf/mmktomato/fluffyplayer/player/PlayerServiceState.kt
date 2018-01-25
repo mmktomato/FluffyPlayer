@@ -6,13 +6,13 @@ package jp.gr.java_conf.mmktomato.fluffyplayer.player
  * @param binder the player service binder.
  * @param isBound indicates whether this activity is bound to the service.
  * @param onPlayerStateChangedListener the listener of `svcBinder#onPlayerStateChanged`.
- * @param onMusicChanged the listener of `svcBinder#onMusicChanged`.
+ * @param onMusicFinished the listener of `svcBinder#onMusicFinished`.
  */
 class PlayerServiceState(
         val binder: PlayerServiceBinder,
         var isBound: Boolean,
         private val onPlayerStateChangedListener: () -> Unit,
-        private val onMusicChanged:() -> Unit) {
+        private val onMusicFinished:() -> Unit) {
     /**
      * the list of listener indices.
      */
@@ -20,7 +20,7 @@ class PlayerServiceState(
 
     init {
         listenerIndices.add(binder.addOnPlayerStateChangedListener(onPlayerStateChangedListener))
-        listenerIndices.add(binder.addOnMusicChangedListener(onMusicChanged))
+        listenerIndices.add(binder.addOnMusicFinishedListener(onMusicFinished))
     }
 
     /**
@@ -30,7 +30,7 @@ class PlayerServiceState(
         isBound = false
         listenerIndices.forEach { index ->
             binder.removeOnPlayerStateChangedListener(index)
-            binder.removeOnMusicChangedListener(index)
+            binder.removeOnMusicFinishedListener(index)
         }
     }
 }
