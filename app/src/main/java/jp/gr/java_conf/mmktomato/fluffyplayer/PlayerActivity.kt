@@ -50,7 +50,7 @@ class PlayerActivity : ActivityBase() {
                 sharedPrefs = sharedPrefs,
                 dbxProxy = dbxProxy,
                 viewModel = viewModel,
-                dbxMetadata = intent.getSerializableExtra("dbxMetadata") as DbxNodeMetadata?,
+                dbxMetadataArray = intent.getSerializableExtra("dbxMetadataArray") as Array<DbxNodeMetadata>?,
                 nowPlayingItem = intent.getSerializableExtra("nowPlayingItem") as PlaylistItem?,
                 playerServiceIntent = playerServiceIntent,
                 startService = { intent -> startService(intent) },

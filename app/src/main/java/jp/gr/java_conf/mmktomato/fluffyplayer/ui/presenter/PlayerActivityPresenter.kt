@@ -202,7 +202,7 @@ internal interface PlayerActivityPresenter {
  * @param sharedPrefs the SharedPrefsHelper.
  * @param dbxProxy the Dropbox API Proxy.
  * @param viewModel the view model.
- * @param dbxMetadata the Dropbox's node metadata.
+ * @param dbxMetadataArray the array of Dropbox's node metadata.
  * @param nowPlayingItem the now playing item.
  * @param playerServiceIntent the player service intent.
  * @param startService the callback to start a service.
@@ -218,7 +218,7 @@ class PlayerActivityPresenterImpl(
         private val sharedPrefs: SharedPrefsHelper,
         private val dbxProxy: DbxProxy,
         override val viewModel: PlayerActivityViewModel,
-        private val dbxMetadata: DbxNodeMetadata?,
+        private val dbxMetadataArray: Array<DbxNodeMetadata>?,
         override var nowPlayingItem: PlaylistItem?,
         private val playerServiceIntent: Intent,
         private val startService: (Intent) -> Unit,
@@ -266,17 +266,23 @@ class PlayerActivityPresenterImpl(
 
         return launch {
             // Start playing new music when launched by FileBrowseActivity.
-            if (dbxMetadata != null) {
-                val id = UUID.randomUUID().toString()
-                nowPlayingItem = PlaylistItem(id, dbxMetadata.path, PlaylistItem.Status.WAIT)
-
+            if (dbxMetadataArray != null) {
                 db.playlistDao.deleteAll()
-                db.playlistDao.insert(nowPlayingItem!!)
-            } else if (nowPlayingItem == null) {
+                dbxMetadataArray.forEachIndexed { index, dbxMetadata ->
+                    val id = UUID.randomUUID().toString()
+                    val playlistItem = PlaylistItem(id, dbxMetadata.path, PlaylistItem.Status.WAIT)
+                    db.playlistDao.insert(playlistItem)
+
+                    if (index == 0) {
+                        nowPlayingItem = playlistItem
+                    }
+                }
+            }
+            else if (nowPlayingItem == null) {
                 nowPlayingItem = db.playlistDao.getNowPlaying()
             }
 
-            playerServiceIntent.putExtra("dbxMetadata", dbxMetadata)
+            playerServiceIntent.putExtra("dbxMetadataArray", dbxMetadataArray)
             playerServiceIntent.putExtra("nowPlayingItem", nowPlayingItem)
 
             startService(playerServiceIntent)
