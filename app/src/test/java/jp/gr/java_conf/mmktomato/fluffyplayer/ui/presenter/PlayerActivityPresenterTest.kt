@@ -95,7 +95,7 @@ class PlayerActivityPresenterTest {
                 sharedPrefs = sharedPrefs,
                 dbxProxy = dbxProxy,
                 viewModel = viewModel,
-                dbxMetadata = dbxFileMetadata,
+                dbxMetadataArray = arrayOf(dbxFileMetadata),
                 nowPlayingItem = null,
                 playerServiceIntent = playerServiceIntent,
                 startService = callbacks::startService,
@@ -131,8 +131,8 @@ class PlayerActivityPresenterTest {
 
         //presenter.onCreate().join()
 
-        val intentMetadata = playerServiceIntent.getSerializableExtra("dbxMetadata")
-        assertEquals(dbxFileMetadata, intentMetadata)
+        val intentMetadataArray = playerServiceIntent.getSerializableExtra("dbxMetadataArray") as Array<DbxNodeMetadata>
+        assertArrayEquals(arrayOf(dbxFileMetadata), intentMetadataArray)
 
         val intentPlaylistItem = playerServiceIntent.getSerializableExtra("nowPlayingItem")
         assertEquals(presenter.nowPlayingItem!!, intentPlaylistItem)

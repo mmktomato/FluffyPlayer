@@ -6,6 +6,9 @@ import android.view.Menu
 import android.view.MenuItem
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.FileBrowseActivityPresenter
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.FileBrowseActivityPresenterImpl
+import kotlinx.coroutines.experimental.CommonPool
+import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.experimental.runBlocking
 
 class FileBrowseActivity : ActivityBase() {
     private lateinit var presenter: FileBrowseActivityPresenter
@@ -20,7 +23,7 @@ class FileBrowseActivity : ActivityBase() {
                 filesListView = findViewById(R.id.filesListView),
                 toolBar = findViewById(R.id.toolbar),
                 inflater = LayoutInflater.from(this),
-                getDbxPath = { intent.getStringExtra("path") },
+                dbxPath = intent.getStringExtra("path") ?: "",
                 startActivity = ::startActivity,
                 setSupportActionBar = ::setSupportActionBar)
     }
@@ -46,7 +49,11 @@ class FileBrowseActivity : ActivityBase() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        // TODO: move to presenter.
-        return super.onOptionsItemSelected(item)
+        return runBlocking(CommonPool) {
+            return@runBlocking when (presenter.onOptionsItemSelected(item!!.itemId).await()) {
+                true -> true
+                false -> super.onOptionsItemSelected(item)
+            }
+        }
     }
 }

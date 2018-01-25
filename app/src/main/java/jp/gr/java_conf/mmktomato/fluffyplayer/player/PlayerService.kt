@@ -52,7 +52,7 @@ internal class PlayerService : Service() {
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        val dbxMetadata = intent.getSerializableExtra("dbxMetadata") as DbxNodeMetadata?
+        val dbxMetadata = intent.getSerializableExtra("dbxMetadataArray") as Array<DbxNodeMetadata>?
         val nowPlayingItem = intent.getSerializableExtra("nowPlayingItem") as PlaylistItem
 
         if (dbxMetadata != null) {

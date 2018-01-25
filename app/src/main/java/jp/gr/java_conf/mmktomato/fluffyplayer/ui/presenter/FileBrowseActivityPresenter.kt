@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.ListView
 import com.dropbox.core.v2.files.ListFolderResult
+import com.dropbox.core.v2.files.Metadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.FileBrowseActivity
 import jp.gr.java_conf.mmktomato.fluffyplayer.PlayerActivity
 import jp.gr.java_conf.mmktomato.fluffyplayer.R
@@ -15,6 +16,7 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelper
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.DbxFileAdapter
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.DbxFileAdapterImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.ListViewOnScrollListener
+import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.Deferred
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.async
@@ -29,9 +31,9 @@ internal interface FileBrowseActivityPresenter {
     val dbxProxy: DbxProxy
 
     /**
-     * A callback that returns a Dropbox folder path.
+     * A Dropbox folder path.
      */
-    val getDbxPath: () -> String?
+    val dbxPath: String
 
     /**
      * A previous result of DbxProxy.listFolder.
@@ -52,19 +54,45 @@ internal interface FileBrowseActivityPresenter {
      */
     fun onFilesListViewScroll(): Deferred<Boolean> = async(UI) {
         // fetch
-        val path = getDbxPath() ?: ""
-        val res = dbxProxy.listFolder(path, lastResult).await()
+
+        val res = dbxProxy.listFolder(dbxPath, lastResult).await()
         lastResult = res
 
         // add
-        listViewAdapter.addItems(res.entries
-                .map { DbxNodeMetadata.createFrom(it) }
-                .filter { !it.isFile || (it.isFile && isMusicFile(it.name)) })
+        listViewAdapter.addItems(toFolderOrMusicFile(res.entries))
 
         if (!res.hasMore) {
             removeProgressBar()
         }
         return@async res.hasMore
+    }
+
+    /**
+     * Returns all contents of `dbxPath`.
+     */
+    fun listFolderAll(): Deferred<List<DbxNodeMetadata>> = async(CommonPool) {
+        var res: ListFolderResult? = null
+        val ret = mutableListOf<DbxNodeMetadata>()
+
+        do {
+            res = dbxProxy.listFolder(dbxPath, res).await()
+            ret.addAll(toFolderOrMusicFile(res.entries))
+        } while (res!!.hasMore)
+
+        return@async ret
+    }
+
+    /**
+     * Converts `List<Metadata>` to `List<DbxNodeMetadata>`.
+     * Removes files which are not music files.
+     *
+     * @param metadataList the list of Dropbox's Metadata.
+     * @return the list of DbxNodeMetadata.
+     */
+    fun toFolderOrMusicFile(metadataList: List<Metadata>): List<DbxNodeMetadata> {
+        return metadataList
+                .map { DbxNodeMetadata.createFrom(it) }
+                .filter { !it.isFile || (it.isFile && isMusicFile(it.name)) }
     }
 
     /**
@@ -81,6 +109,14 @@ internal interface FileBrowseActivityPresenter {
         val extensions = listOf(".wav", ".m4a", ".mp3", ".flac", ".ogg")
         return extensions.any { fileName.toLowerCase().endsWith(it) }
     }
+
+    /**
+     * Handles `onOptionsItemSelected`.
+     *
+     * @param menuItemId the menu item's id.
+     * @return Returns true if `menuItemId` is handled.
+     */
+    fun onOptionsItemSelected(menuItemId: Int): Deferred<Boolean>
 }
 
 /**
@@ -91,7 +127,7 @@ internal interface FileBrowseActivityPresenter {
  * @param inflater a LayoutInflater.
  * @param filesListView a ListView to list files.
  * @param toolBar a ToolBar.
- * @param getDbxPath a callback that returns a Dropbox folder path.
+ * @param dbxPath a Dropbox folder path.
  * @param startActivity a callback to start an activity.
  * @param setSupportActionBar a callback to set action bar.
  */
@@ -101,7 +137,7 @@ internal class FileBrowseActivityPresenterImpl(
         private val inflater: LayoutInflater,
         private val filesListView: ListView,
         private val toolBar: Toolbar,
-        override val getDbxPath: () -> String?,
+        override val dbxPath: String,
         private val startActivity: (Intent) -> Unit,
         private val setSupportActionBar: (Toolbar) -> Unit) : FileBrowseActivityPresenter {
     /**
@@ -144,6 +180,8 @@ internal class FileBrowseActivityPresenterImpl(
 
         // on item click
         filesListView.setOnItemClickListener { parent, view, position, id ->
+            // TODO: extract to method to make the test easy.
+
             if (view.id != R.id.dbxFileListItem) {
                 return@setOnItemClickListener
             }
@@ -151,7 +189,10 @@ internal class FileBrowseActivityPresenterImpl(
             val dbxMetadata = listViewAdapter.getItem(position)
 
             if (dbxMetadata is DbxNodeMetadata) {
-                onFilesListViewItemClick(dbxMetadata)
+                when (dbxMetadata.isFile) {
+                    true -> playback(listOf(dbxMetadata))
+                    false -> browseFolder(dbxMetadata)
+                }
             }
         }
 
@@ -168,20 +209,46 @@ internal class FileBrowseActivityPresenterImpl(
     }
 
     /**
-     * Called when an item of filesListView is tapped.
+     * Starts `PlayerActivity` to playback musics.
      *
-     * @param dbxMetadata the tapped metadata.
+     * @param dbxFileMetadataList the list of file metadata to playback.
      */
-    private fun onFilesListViewItemClick(dbxMetadata: DbxNodeMetadata) {
-        if (dbxMetadata.isFile) {
-            val intent = Intent(sharedPrefs.context, PlayerActivity::class.java)
-            intent.putExtra("dbxMetadata", dbxMetadata)
-            startActivity(intent)
+    private fun playback(dbxFileMetadataList: List<DbxNodeMetadata>) {
+        val intent = Intent(sharedPrefs.context, PlayerActivity::class.java)
+        intent.putExtra("dbxMetadataArray", dbxFileMetadataList.toTypedArray())
+        startActivity(intent)
+    }
+
+    /**
+     * Starts this activity to browse folder.
+     *
+     * @param dbxFolderMetadata the folder metadata to browse.
+     */
+    private fun browseFolder(dbxFolderMetadata: DbxNodeMetadata) {
+        if (dbxFolderMetadata.isFile) {
+            return
         }
-        else {
-            val intent = Intent(sharedPrefs.context, FileBrowseActivity::class.java)
-            intent.putExtra("path", dbxMetadata.path)
-            startActivity(intent)
+
+        val intent = Intent(sharedPrefs.context, FileBrowseActivity::class.java)
+        intent.putExtra("path", dbxFolderMetadata.path)
+        startActivity(intent)
+    }
+
+    /**
+     * Handles `onOptionsItemSelected`.
+     *
+     * @param menuItemId the menu item's id.
+     * @return Returns true if `menuItemId` is handled.
+     */
+    override fun onOptionsItemSelected(menuItemId: Int): Deferred<Boolean> = async(CommonPool) {
+        if (menuItemId == R.id.playback_folder_item) {
+            val allContents = listFolderAll().await().filter { it.isFile }
+
+            if (0 < allContents.count()) {
+                playback(allContents)
+            }
+            return@async true
         }
+        return@async false
     }
 }
