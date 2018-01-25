@@ -93,6 +93,7 @@ internal interface FileBrowseActivityPresenter {
         return metadataList
                 .map { DbxNodeMetadata.createFrom(it) }
                 .filter { !it.isFile || (it.isFile && isMusicFile(it.name)) }
+                .sortedBy { it.name }
     }
 
     /**
