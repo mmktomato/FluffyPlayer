@@ -145,7 +145,7 @@ internal interface PlayerActivityPresenter {
      *
      * @param uri the music uri.
      */
-    suspend fun startMusicWithRefreshUi(uri: String) = launch {
+    fun startMusicWithRefreshUi(uri: String) = launch {
         val refreshUiDeferred = startRefreshUI(uri)
         val startMusicJob =  launch {
             svcState.binder.prepare(uri)  // suspend function.
