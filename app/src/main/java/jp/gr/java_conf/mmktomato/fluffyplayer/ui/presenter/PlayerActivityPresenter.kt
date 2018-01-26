@@ -10,9 +10,6 @@ import android.widget.Button
 import jp.gr.java_conf.mmktomato.fluffyplayer.R
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.AppDatabase
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DaggerPlayerActivityPresenterComponent
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.AppModule
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.DatabaseModule
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
 import jp.gr.java_conf.mmktomato.fluffyplayer.entity.MusicMetadata
@@ -25,7 +22,6 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.NotificationUseCase
 import kotlinx.coroutines.experimental.*
 import java.io.ByteArrayInputStream
 import java.util.*
-import javax.inject.Inject
 
 /**
  * A presenter of PlayerActivity.
@@ -252,8 +248,7 @@ class PlayerActivityPresenterImpl(
     /**
      * the database.
      */
-    @Inject
-    override lateinit var db: AppDatabase
+    override val db = AppDatabase.Factory.create(sharedPrefs.context)
 
     /**
      * the NotificationUseCase.
@@ -269,14 +264,6 @@ class PlayerActivityPresenterImpl(
      * indicates whether the PlayerService is initialized.
      */
     override var isPlayerServiceInitialized: Boolean = false
-
-    init {
-        DaggerPlayerActivityPresenterComponent.builder()
-                .appModule(AppModule(sharedPrefs.context))
-                .databaseModule(DatabaseModule())
-                .build()
-                .inject(this)
-    }
 
     override fun onCreate(): Job {
         resetUI()
