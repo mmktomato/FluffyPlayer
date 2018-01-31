@@ -31,9 +31,9 @@ internal interface FileBrowseActivityPresenter {
     val dbxProxy: DbxProxy
 
     /**
-     * A Dropbox folder path.
+     * A Dropbox folder metadata.
      */
-    val dbxPath: String
+    val dbxFolderMetadata: DbxNodeMetadata
 
     /**
      * A previous result of DbxProxy.listFolder.
@@ -55,7 +55,7 @@ internal interface FileBrowseActivityPresenter {
     fun onFilesListViewScroll(): Deferred<Boolean> = async(UI) {
         // fetch
 
-        val res = dbxProxy.listFolder(dbxPath, lastResult).await()
+        val res = dbxProxy.listFolder(dbxFolderMetadata.path, lastResult).await()
         lastResult = res
 
         // add
@@ -75,7 +75,7 @@ internal interface FileBrowseActivityPresenter {
         val ret = mutableListOf<DbxNodeMetadata>()
 
         do {
-            res = dbxProxy.listFolder(dbxPath, res).await()
+            res = dbxProxy.listFolder(dbxFolderMetadata.path, res).await()
             ret.addAll(toFolderOrMusicFile(res.entries))
         } while (res!!.hasMore)
 
@@ -128,7 +128,7 @@ internal interface FileBrowseActivityPresenter {
  * @param inflater a LayoutInflater.
  * @param filesListView a ListView to list files.
  * @param toolBar a ToolBar.
- * @param dbxPath a Dropbox folder path.
+ * @param dbxFolderMetadata a Dropbox folder metadata.
  * @param startActivity a callback to start an activity.
  * @param setSupportActionBar a callback to set action bar.
  */
@@ -138,7 +138,7 @@ internal class FileBrowseActivityPresenterImpl(
         private val inflater: LayoutInflater,
         private val filesListView: ListView,
         private val toolBar: Toolbar,
-        override val dbxPath: String,
+        override val dbxFolderMetadata: DbxNodeMetadata,
         private val startActivity: (Intent) -> Unit,
         private val setSupportActionBar: (Toolbar) -> Unit) : FileBrowseActivityPresenter {
     /**
@@ -198,7 +198,7 @@ internal class FileBrowseActivityPresenterImpl(
         }
 
         // toolBar
-        toolBar.setTitle(R.string.folder)
+        toolBar.title = dbxFolderMetadata.name
         setSupportActionBar(toolBar)
     }
 
@@ -223,15 +223,15 @@ internal class FileBrowseActivityPresenterImpl(
     /**
      * Starts this activity to browse folder.
      *
-     * @param dbxFolderMetadata the folder metadata to browse.
+     * @param intentFolder the folder metadata to browse.
      */
-    private fun browseFolder(dbxFolderMetadata: DbxNodeMetadata) {
-        if (dbxFolderMetadata.isFile) {
+    private fun browseFolder(intentFolder: DbxNodeMetadata) {
+        if (intentFolder.isFile) {
             return
         }
 
         val intent = Intent(sharedPrefs.context, FileBrowseActivity::class.java)
-        intent.putExtra("path", dbxFolderMetadata.path)
+        intent.putExtra("dbxFolderMetadata", intentFolder)
         startActivity(intent)
     }
 
