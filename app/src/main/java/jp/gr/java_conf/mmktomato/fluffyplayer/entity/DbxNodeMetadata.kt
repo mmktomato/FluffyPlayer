@@ -22,5 +22,11 @@ data class DbxNodeMetadata(val isFile: Boolean,
         internal fun createFrom(raw: Metadata): DbxNodeMetadata {
             return DbxNodeMetadata((raw is FileMetadata), raw.name, raw.pathLower)
         }
+
+        /**
+         * Returns root folder instance.
+         */
+        internal val root: DbxNodeMetadata
+                get() = DbxNodeMetadata(false, "/", "")
     }
 }
