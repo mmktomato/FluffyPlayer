@@ -4,7 +4,7 @@ import android.databinding.DataBindingUtil
 import android.os.Bundle
 import android.widget.Button
 import jp.gr.java_conf.mmktomato.fluffyplayer.databinding.ActivitySettingsBinding
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.createComponentInjector
+import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DependencyInjector
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.SettingsActivityPresenter
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.SettingsActivityPresenterImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.SettingsActivityViewModel
@@ -24,8 +24,7 @@ class SettingsActivity : ActivityBase() {
                 viewModel = viewModel,
                 connectDropboxButton = findViewById<Button>(R.id.connectDropboxButton))
 
-        val injector = createComponentInjector()
-        injector.inject(presenter as SettingsActivityPresenterImpl, this)
+        DependencyInjector.injector.inject(presenter as SettingsActivityPresenterImpl, this)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

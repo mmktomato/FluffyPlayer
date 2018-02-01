@@ -3,6 +3,7 @@ package jp.gr.java_conf.mmktomato.fluffyplayer.di.component
 import android.content.Context
 import jp.gr.java_conf.mmktomato.fluffyplayer.ActivityBase
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.AppModuleMock
+import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.DatabaseModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.DbxModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.SharedPrefsModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.FileBrowseActivityPresenterImpl
@@ -12,13 +13,13 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.SettingsActivityPrese
 /**
  * Inject mocks.
  */
-class MockComponentInjector : ComponentInjector {
+class MockComponentInjector : ComponentInjector() {
     companion object {
         /**
          * Sets test mode.
          */
         fun setTestMode() {
-            componentInjector = MockComponentInjector()
+            DependencyInjector.injector = MockComponentInjector()
         }
     }
 
@@ -83,5 +84,18 @@ class MockComponentInjector : ComponentInjector {
                 .dbxModuleMock(DbxModuleMock(true))
                 .build()
                 .inject(presenter)
+    }
+
+    /**
+     * Inject AppDatabase to PlayerActivityPresenter.
+     *
+     * @param presenter the instance to inject dependencies.
+     */
+    override fun injectAppDatabase(presenter: PlayerActivityPresenterImpl) {
+        presenter.db = DaggerDatabaseComponentMock.builder()
+                .appModuleMock(AppModuleMock())
+                .databaseModuleMock(DatabaseModuleMock())
+                .build()
+                .createAppDatabaseMock()
     }
 }

@@ -274,10 +274,6 @@ class PlayerActivityPresenterImpl(
      */
     override var isPlayerServiceInitialized: Boolean = false
 
-    init {
-        db = AppDatabase.Factory.create(ctx)
-    }
-
     override fun onCreate(): Job {
         resetUI()
 

@@ -2,8 +2,8 @@ package jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter
 
 import android.widget.Button
 import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_DBX_USER_NAME
+import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DependencyInjector
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.MockComponentInjector
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.createComponentInjector
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelper
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.SettingsActivityViewModel
@@ -44,8 +44,7 @@ class SettingsActivityPresenterTest {
                 viewModel = viewModel,
                 connectDropboxButton = Button(ctx))
 
-        val injector = createComponentInjector()
-        injector.inject(presenter as SettingsActivityPresenterImpl, ctx)
+        DependencyInjector.injector.inject(presenter as SettingsActivityPresenterImpl, ctx)
 
         sharedPrefs = (presenter as SettingsActivityPresenterImpl).sharedPrefs
         dbxProxy = (presenter as SettingsActivityPresenterImpl).dbxProxy
