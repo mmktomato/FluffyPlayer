@@ -12,12 +12,12 @@ import android.os.IBinder
 import android.widget.Button
 import jp.gr.java_conf.mmktomato.fluffyplayer.databinding.ActivityPlayerBinding
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
+import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.createComponentInjector
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.PlayerActivityPresenter
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.PlayerActivityPresenterImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.PlayerActivityViewModel
-import kotlinx.coroutines.experimental.runBlocking
 
 class PlayerActivity : ActivityBase() {
     private lateinit var presenter: PlayerActivityPresenter
@@ -47,8 +47,6 @@ class PlayerActivity : ActivityBase() {
         val playerServiceIntent = Intent(this, PlayerService::class.java)
 
         presenter = PlayerActivityPresenterImpl(
-                sharedPrefs = sharedPrefs,
-                dbxProxy = dbxProxy,
                 viewModel = viewModel,
                 dbxMetadataArray = intent.getSerializableExtra("dbxMetadataArray") as Array<DbxNodeMetadata>?,
                 nowPlayingItem = intent.getSerializableExtra("nowPlayingItem") as PlaylistItem?,
@@ -61,6 +59,9 @@ class PlayerActivity : ActivityBase() {
                 playButton = findViewById<Button>(R.id.playButton),
                 resources = resources,
                 mediaMetadataRetriever = MediaMetadataRetriever())
+
+        val injector = createComponentInjector()
+        injector.inject(presenter as PlayerActivityPresenterImpl, this)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

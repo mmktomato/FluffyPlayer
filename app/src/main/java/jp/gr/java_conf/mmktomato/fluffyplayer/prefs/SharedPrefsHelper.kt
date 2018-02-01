@@ -8,11 +8,6 @@ import android.content.SharedPreferences
  */
 interface SharedPrefsHelper {
     /**
-     * an android context.
-     */
-    val context: Context
-
-    /**
      * a Dropbox access token.
      */
     var dbxAccessToken: String
@@ -28,7 +23,7 @@ interface SharedPrefsHelper {
  *
  * @param context An android context.
  */
-class SharedPrefsHelperImpl(override val context: Context) : SharedPrefsHelper {
+class SharedPrefsHelperImpl(private val context: Context) : SharedPrefsHelper {
     companion object {
         /**
          * The preference name.

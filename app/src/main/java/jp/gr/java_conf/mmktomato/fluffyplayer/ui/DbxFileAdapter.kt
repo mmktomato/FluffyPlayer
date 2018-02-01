@@ -12,7 +12,7 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
 /**
  * A custom adapter of ListView to show Dropbox files.
  */
-internal interface DbxFileAdapter {
+interface DbxFileAdapter {
     /**
      * listView items.
      */

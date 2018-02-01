@@ -13,6 +13,8 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_MUSIC_URI
 import jp.gr.java_conf.mmktomato.fluffyplayer.R
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DaggerPlayerActivityPresenterTestComponent
+import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.MockComponentInjector
+import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.createComponentInjector
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.AppModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.DbxModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.PlayerModuleMock
@@ -28,10 +30,12 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.PlayerActivityViewMod
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Assert.*
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.*
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import javax.inject.Inject
 import javax.inject.Named
 
@@ -75,6 +79,14 @@ class PlayerActivityPresenterTest {
     private lateinit var notificationManager: NotificationManager
     private lateinit var presenter: PlayerActivityPresenter
 
+    companion object {
+        @BeforeClass
+        @JvmStatic
+        fun setUpClass() {
+            MockComponentInjector.setTestMode()
+        }
+    }
+
     @Before
     fun setUp() {
         DaggerPlayerActivityPresenterTestComponent.builder()
@@ -90,8 +102,6 @@ class PlayerActivityPresenterTest {
         playerServiceIntent = Intent()
         notificationManager = mock(NotificationManager::class.java)
         presenter = PlayerActivityPresenterImpl(
-                sharedPrefs = sharedPrefs,
-                dbxProxy = dbxProxy,
                 viewModel = viewModel,
                 dbxMetadataArray = dbxFileMetadataArray,
                 nowPlayingItem = null,
@@ -104,6 +114,10 @@ class PlayerActivityPresenterTest {
                 playButton = Button(ctx),
                 resources = ctx.resources,
                 mediaMetadataRetriever = mediaMetadataRetriever)
+
+        val injector = createComponentInjector()
+        injector.inject(presenter as PlayerActivityPresenterImpl, RuntimeEnvironment.application)
+
         runBlocking {
             presenter.onCreate().join()
         }

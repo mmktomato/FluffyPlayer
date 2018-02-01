@@ -1,56 +1,54 @@
 package jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter
 
-import android.content.Context
 import android.widget.Button
 import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_DBX_USER_NAME
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DaggerSettingsActivityPresenterTestComponent
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.AppModuleMock
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.DbxModuleMock
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.SharedPrefsModuleMock
+import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.MockComponentInjector
+import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.createComponentInjector
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelper
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.SettingsActivityViewModel
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.*
 import org.robolectric.RobolectricTestRunner
-import javax.inject.Inject
+import org.robolectric.RuntimeEnvironment
 
 /**
  * Tests for SettingsActivityPresenter.
  */
 @RunWith(RobolectricTestRunner::class)
 class SettingsActivityPresenterTest {
-    @Inject
-    lateinit var ctx: Context
-
-    @Inject
-    lateinit var sharedPrefs: SharedPrefsHelper
-
-    @Inject
-    lateinit var dbxProxy: DbxProxy
-
+    private lateinit var sharedPrefs: SharedPrefsHelper
+    private lateinit var dbxProxy: DbxProxy
     private lateinit var viewModel: SettingsActivityViewModel
     private lateinit var presenter: SettingsActivityPresenter
 
+    companion object {
+        @BeforeClass
+        @JvmStatic
+        fun setUpClass() {
+            MockComponentInjector.setTestMode()
+        }
+    }
+
     @Before
     fun setUp() {
-        DaggerSettingsActivityPresenterTestComponent.builder()
-                .appModuleMock(AppModuleMock())
-                .sharedPrefsModuleMock(SharedPrefsModuleMock())
-                .dbxModuleMock(DbxModuleMock(isAuthenticated = true))
-                .build()
-                .inject(this)
+        val ctx = RuntimeEnvironment.application
 
         viewModel = SettingsActivityViewModel()
         presenter = SettingsActivityPresenterImpl(
-                sharedPrefs = sharedPrefs,
-                dbxProxy = dbxProxy,
                 viewModel = viewModel,
                 connectDropboxButton = Button(ctx))
+
+        val injector = createComponentInjector()
+        injector.inject(presenter as SettingsActivityPresenterImpl, ctx)
+
+        sharedPrefs = (presenter as SettingsActivityPresenterImpl).sharedPrefs
+        dbxProxy = (presenter as SettingsActivityPresenterImpl).dbxProxy
     }
 
     /**

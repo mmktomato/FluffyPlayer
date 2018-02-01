@@ -5,10 +5,12 @@ import android.content.Context
 import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_MUSIC_TITLE
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DaggerNotificationUseCaseTestComponent
+import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.MockComponentInjector
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.AppModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.PlaylistModuleMock
 import org.junit.Assert.*
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -26,6 +28,14 @@ class NotificationUseCaseTest {
     lateinit var nowPlayingItem: PlaylistItem
 
     private lateinit var useCase: NotificationUseCase
+
+    companion object {
+        @BeforeClass
+        @JvmStatic
+        fun setUpClass() {
+            MockComponentInjector.setTestMode()
+        }
+    }
 
     @Before
     fun setUp() {
