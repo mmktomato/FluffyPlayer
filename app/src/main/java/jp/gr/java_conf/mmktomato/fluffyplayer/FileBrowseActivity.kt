@@ -4,12 +4,11 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.createComponentInjector
+import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DependencyInjector
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.FileBrowseActivityPresenter
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.FileBrowseActivityPresenterImpl
 import kotlinx.coroutines.experimental.CommonPool
-import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.runBlocking
 
 class FileBrowseActivity : ActivityBase() {
@@ -27,8 +26,7 @@ class FileBrowseActivity : ActivityBase() {
                 startActivity = ::startActivity,
                 setSupportActionBar = ::setSupportActionBar)
 
-        val injector = createComponentInjector()
-        injector.inject(presenter as FileBrowseActivityPresenterImpl, this)
+        DependencyInjector.injector.inject(presenter as FileBrowseActivityPresenterImpl, this)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

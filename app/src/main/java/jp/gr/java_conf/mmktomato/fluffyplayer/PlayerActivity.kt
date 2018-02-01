@@ -12,7 +12,7 @@ import android.os.IBinder
 import android.widget.Button
 import jp.gr.java_conf.mmktomato.fluffyplayer.databinding.ActivityPlayerBinding
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.createComponentInjector
+import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DependencyInjector
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.PlayerActivityPresenter
@@ -60,8 +60,8 @@ class PlayerActivity : ActivityBase() {
                 resources = resources,
                 mediaMetadataRetriever = MediaMetadataRetriever())
 
-        val injector = createComponentInjector()
-        injector.inject(presenter as PlayerActivityPresenterImpl, this)
+        DependencyInjector.injector.inject(presenter as PlayerActivityPresenterImpl, this)
+        DependencyInjector.injector.injectAppDatabase(presenter as PlayerActivityPresenterImpl)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

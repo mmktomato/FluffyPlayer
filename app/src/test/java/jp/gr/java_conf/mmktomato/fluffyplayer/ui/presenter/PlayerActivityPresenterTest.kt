@@ -13,8 +13,8 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_MUSIC_URI
 import jp.gr.java_conf.mmktomato.fluffyplayer.R
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DaggerPlayerActivityPresenterTestComponent
+import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DependencyInjector
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.MockComponentInjector
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.createComponentInjector
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.AppModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.DbxModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.PlayerModuleMock
@@ -115,8 +115,8 @@ class PlayerActivityPresenterTest {
                 resources = ctx.resources,
                 mediaMetadataRetriever = mediaMetadataRetriever)
 
-        val injector = createComponentInjector()
-        injector.inject(presenter as PlayerActivityPresenterImpl, RuntimeEnvironment.application)
+        DependencyInjector.injector.inject(presenter as PlayerActivityPresenterImpl, RuntimeEnvironment.application)
+        DependencyInjector.injector.injectAppDatabase(presenter as PlayerActivityPresenterImpl)
 
         runBlocking {
             presenter.onCreate().join()
