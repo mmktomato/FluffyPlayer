@@ -3,11 +3,13 @@ package jp.gr.java_conf.mmktomato.fluffyplayer.player
 import android.media.MediaPlayer
 import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_MUSIC_URI
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DaggerPlayerServiceBinderTestComponent
+import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.MockComponentInjector
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.PlayerModuleMock
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Test
 import org.mockito.Mockito.*
 import javax.inject.Inject
@@ -30,6 +32,14 @@ class PlayerServiceBinderTest {
     private lateinit var listenerIndices: MutableList<Int>
 
     private lateinit var callbacks: CallbackHolder
+
+    companion object {
+        @BeforeClass
+        @JvmStatic
+        fun setUpClass() {
+            MockComponentInjector.setTestMode()
+        }
+    }
 
     @Before
     fun setUp() {

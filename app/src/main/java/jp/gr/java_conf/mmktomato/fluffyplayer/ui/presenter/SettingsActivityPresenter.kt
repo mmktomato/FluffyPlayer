@@ -7,11 +7,12 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.SettingsActivityViewM
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.launch
+import javax.inject.Inject
 
 /**
  * A presenter of SettingsActivity.
  */
-internal interface SettingsActivityPresenter {
+interface SettingsActivityPresenter {
 
     fun onCreate()
 
@@ -31,16 +32,24 @@ internal interface SettingsActivityPresenter {
 /**
  * An implementation of SettingActivityPresenter.
  *
- * @param sharedPrefs the SharedPreferences.
- * @param dbxProxy the Dropbox API proxy.
  * @param viewModel the view model of this activity.
  * @param connectDropboxButton the instance of connectDropboxButton.
  */
-internal class SettingsActivityPresenterImpl(
-        private val sharedPrefs: SharedPrefsHelper,
-        private val dbxProxy: DbxProxy,
+class SettingsActivityPresenterImpl(
         private val viewModel: SettingsActivityViewModel,
         private val connectDropboxButton: Button) : SettingsActivityPresenter {
+
+    /**
+     * the SharedPreferences.
+     */
+    @Inject
+    lateinit var sharedPrefs: SharedPrefsHelper
+
+    /**
+     * the DbxProxy.
+     */
+    @Inject
+    lateinit var dbxProxy: DbxProxy
 
     /**
      * indicates whether the OAuth2 is processing.

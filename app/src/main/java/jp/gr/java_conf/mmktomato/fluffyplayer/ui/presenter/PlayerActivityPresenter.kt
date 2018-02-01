@@ -1,6 +1,7 @@
 package jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter
 
 import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
 import android.graphics.drawable.Drawable
@@ -16,12 +17,12 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.entity.MusicMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceBinder
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceState
-import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelper
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.PlayerActivityViewModel
 import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.NotificationUseCase
 import kotlinx.coroutines.experimental.*
 import java.io.ByteArrayInputStream
 import java.util.*
+import javax.inject.Inject
 
 /**
  * A presenter of PlayerActivity.
@@ -214,8 +215,6 @@ internal interface PlayerActivityPresenter {
 /**
  * An implementation of PlayerActivityPresenter.
  *
- * @param sharedPrefs the SharedPrefsHelper.
- * @param dbxProxy the Dropbox API Proxy.
  * @param viewModel the view model.
  * @param dbxMetadataArray the array of Dropbox's node metadata.
  * @param nowPlayingItem the now playing item.
@@ -230,8 +229,6 @@ internal interface PlayerActivityPresenter {
  * @param mediaMetadataRetriever the mediaMetadataRetriever.
  */
 class PlayerActivityPresenterImpl(
-        private val sharedPrefs: SharedPrefsHelper,
-        private val dbxProxy: DbxProxy,
         override val viewModel: PlayerActivityViewModel,
         private val dbxMetadataArray: Array<DbxNodeMetadata>?,
         override var nowPlayingItem: PlaylistItem?,
@@ -246,9 +243,21 @@ class PlayerActivityPresenterImpl(
         override val mediaMetadataRetriever: MediaMetadataRetriever) : PlayerActivityPresenter {
 
     /**
+     * An android's Context.
+     */
+    @Inject
+    lateinit var ctx: Context
+
+    /**
+     * A DbxProxy.
+     */
+    @Inject
+    lateinit var dbxProxy: DbxProxy
+
+    /**
      * the database.
      */
-    override val db = AppDatabase.Factory.create(sharedPrefs.context)
+    override lateinit var db: AppDatabase
 
     /**
      * the NotificationUseCase.
@@ -264,6 +273,10 @@ class PlayerActivityPresenterImpl(
      * indicates whether the PlayerService is initialized.
      */
     override var isPlayerServiceInitialized: Boolean = false
+
+    init {
+        db = AppDatabase.Factory.create(ctx)
+    }
 
     override fun onCreate(): Job {
         resetUI()
@@ -354,7 +367,7 @@ class PlayerActivityPresenterImpl(
      */
     override fun updateNotification(metadata: MusicMetadata) {
         val notification = notificationUseCase.createNowPlayingNotification(
-                sharedPrefs.context, nowPlayingItem!!, metadata.title ?: getString(R.string.unknown_music_title))
+                ctx, nowPlayingItem!!, metadata.title ?: getString(R.string.unknown_music_title))
 
         notificationManager.notify(PlayerService.NOTIFICATION_ID, notification)
     }

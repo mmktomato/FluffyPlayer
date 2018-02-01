@@ -1,5 +1,6 @@
 package jp.gr.java_conf.mmktomato.fluffyplayer.dropbox
 
+import android.content.Context
 import com.dropbox.core.DbxRequestConfig
 import com.dropbox.core.android.Auth
 import com.dropbox.core.v2.DbxClientV2
@@ -56,9 +57,10 @@ interface DbxProxy {
 /**
  * An implementation of DbxProxy.
  *
+ * @param ctx an android context.
  * @param sharedPrefs a SharedPrefsHelper.
  */
-class DbxProxyImpl constructor(private val sharedPrefs: SharedPrefsHelper) : DbxProxy {
+class DbxProxyImpl constructor(private val ctx: Context, private val sharedPrefs: SharedPrefsHelper) : DbxProxy {
     /**
      * An Dropbox API client.
      */
@@ -74,7 +76,7 @@ class DbxProxyImpl constructor(private val sharedPrefs: SharedPrefsHelper) : Dbx
      */
     override fun auth() {
         if (sharedPrefs.dbxAccessToken.isNullOrEmpty()) {
-            Auth.startOAuth2Authentication(sharedPrefs.context, BuildConfig.FLUFFY_PLAYER_DBX_APP_KEY)
+            Auth.startOAuth2Authentication(ctx, BuildConfig.FLUFFY_PLAYER_DBX_APP_KEY)
         }
     }
 

@@ -1,5 +1,6 @@
 package jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter
 
+import android.content.Context
 import android.content.Intent
 import android.support.v7.widget.Toolbar
 import android.view.LayoutInflater
@@ -12,7 +13,6 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.PlayerActivity
 import jp.gr.java_conf.mmktomato.fluffyplayer.R
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
-import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelper
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.DbxFileAdapter
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.DbxFileAdapterImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.ListViewOnScrollListener
@@ -20,11 +20,12 @@ import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.Deferred
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.async
+import javax.inject.Inject
 
 /**
  * A presenter of FileBrowseActivity
  */
-internal interface FileBrowseActivityPresenter {
+interface FileBrowseActivityPresenter {
     /**
      * A DbxProxy.
      */
@@ -123,8 +124,6 @@ internal interface FileBrowseActivityPresenter {
 /**
  * An implementation of FileBrowseActivityPresenter
  *
- * @param sharedPrefs a SharedPrefsHelper.
- * @param dbxProxy a DbxProxy.
  * @param inflater a LayoutInflater.
  * @param filesListView a ListView to list files.
  * @param toolBar a ToolBar.
@@ -132,9 +131,7 @@ internal interface FileBrowseActivityPresenter {
  * @param startActivity a callback to start an activity.
  * @param setSupportActionBar a callback to set action bar.
  */
-internal class FileBrowseActivityPresenterImpl(
-        private val sharedPrefs: SharedPrefsHelper,
-        override val dbxProxy: DbxProxy,
+class FileBrowseActivityPresenterImpl(
         private val inflater: LayoutInflater,
         private val filesListView: ListView,
         private val toolBar: Toolbar,
@@ -150,6 +147,18 @@ internal class FileBrowseActivityPresenterImpl(
      * A filesListView's progress bar.
      */
     private lateinit var progressBar: View
+
+    /**
+     * A DbxProxy.
+     */
+    @Inject
+    override lateinit var dbxProxy: DbxProxy
+
+    /**
+     * An android's Context.
+     */
+    @Inject
+    lateinit var ctx: Context
 
     /**
      * A previous result of DbxProxy.listFolder.
@@ -215,7 +224,7 @@ internal class FileBrowseActivityPresenterImpl(
      * @param dbxFileMetadataList the list of file metadata to playback.
      */
     private fun playback(dbxFileMetadataList: List<DbxNodeMetadata>) {
-        val intent = Intent(sharedPrefs.context, PlayerActivity::class.java)
+        val intent = Intent(ctx, PlayerActivity::class.java)
         intent.putExtra("dbxMetadataArray", dbxFileMetadataList.toTypedArray())
         startActivity(intent)
     }
@@ -230,7 +239,7 @@ internal class FileBrowseActivityPresenterImpl(
             return
         }
 
-        val intent = Intent(sharedPrefs.context, FileBrowseActivity::class.java)
+        val intent = Intent(ctx, FileBrowseActivity::class.java)
         intent.putExtra("dbxFolderMetadata", intentFolder)
         startActivity(intent)
     }
