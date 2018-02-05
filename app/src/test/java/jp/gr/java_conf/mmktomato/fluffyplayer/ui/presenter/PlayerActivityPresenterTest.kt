@@ -1,7 +1,6 @@
 package jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter
 
 import android.app.Notification
-import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.media.MediaMetadataRetriever
@@ -22,9 +21,9 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.SharedPrefsModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
 import jp.gr.java_conf.mmktomato.fluffyplayer.entity.MusicMetadata
-import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceBinder
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceState
+import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.AppPrefs
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelper
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.PlayerActivityViewModel
 import kotlinx.coroutines.experimental.runBlocking
@@ -76,7 +75,6 @@ class PlayerActivityPresenterTest {
     private lateinit var viewModel: PlayerActivityViewModel
     private lateinit var callbacks: CallbackHolder
     private lateinit var playerServiceIntent: Intent
-    private lateinit var notificationManager: NotificationManager
     private lateinit var presenter: PlayerActivityPresenter
 
     companion object {
@@ -100,7 +98,6 @@ class PlayerActivityPresenterTest {
         viewModel = PlayerActivityViewModel()
         callbacks = mock(CallbackHolder::class.java)
         playerServiceIntent = Intent()
-        notificationManager = mock(NotificationManager::class.java)
         presenter = PlayerActivityPresenterImpl(
                 viewModel = viewModel,
                 dbxMetadataArray = dbxFileMetadataArray,
@@ -110,13 +107,11 @@ class PlayerActivityPresenterTest {
                 bindService = callbacks::bindService,
                 unbindService = callbacks::unbindService,
                 getString = ctx::getString,
-                notificationManager = notificationManager,
                 playButton = Button(ctx),
                 resources = ctx.resources,
                 mediaMetadataRetriever = mediaMetadataRetriever)
 
-        DependencyInjector.injector.inject(presenter as PlayerActivityPresenterImpl, RuntimeEnvironment.application)
-        DependencyInjector.injector.injectAppDatabase(presenter as PlayerActivityPresenterImpl)
+        DependencyInjector.injector.inject(presenter as PlayerActivityPresenterImpl, ctx)
 
         runBlocking {
             presenter.onCreate().join()
@@ -253,7 +248,7 @@ class PlayerActivityPresenterTest {
 
         //assertTrue(viewModel.isPlaying.get())
         assertEquals(DUMMY_MUSIC_TITLE, viewModel.title.get())
-        verify(notificationManager, times(1)).notify(eq(PlayerService.NOTIFICATION_ID), any(Notification::class.java))
+        verify(presenter.notificationUseCase.notificationManager, times(1)).notify(eq(AppPrefs.NOW_PLAYING_NOTIFICATION_ID), any(Notification::class.java))
         verify(player, times(1)).start()
         assertEquals(PlaylistItem.Status.PLAYING, presenter.nowPlayingItem!!.status)
     }
@@ -303,12 +298,5 @@ class PlayerActivityPresenterTest {
         assertEquals(ctx.getString(R.string.now_loading_text), viewModel.title.get())
         assertEquals(ctx.resources.getDrawable(R.drawable.ic_no_image, null), viewModel.artwork.get())
         assertFalse(viewModel.isPlaying.get())
-    }
-
-    @Test
-    fun updateNotification() {
-        presenter.updateNotification(mock(MusicMetadata::class.java))
-
-        verify(notificationManager, times(1)).notify(eq(PlayerService.NOTIFICATION_ID), any(Notification::class.java))
     }
 }

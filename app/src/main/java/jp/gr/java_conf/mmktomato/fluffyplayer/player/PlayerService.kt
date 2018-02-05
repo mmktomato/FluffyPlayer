@@ -8,6 +8,7 @@ import android.os.IBinder
 import android.util.Log
 import jp.gr.java_conf.mmktomato.fluffyplayer.R
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
+import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DependencyInjector
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.AppPrefs
 import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.NotificationUseCase
@@ -15,14 +16,7 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.NotificationUseCase
 /**
  * A music player service.
  */
-internal class PlayerService : Service() {
-    companion object {
-        /**
-         * the notification id.
-         */
-        val NOTIFICATION_ID = 1
-    }
-
+class PlayerService : Service() {
     /**
      * the media player.
      */
@@ -36,7 +30,7 @@ internal class PlayerService : Service() {
     /**
      * the NotificationUseCase.
      */
-    private val notificationUseCase = NotificationUseCase()
+    private lateinit var notificationUseCase: NotificationUseCase
 
     /**
      * whether this service is started.
@@ -49,6 +43,8 @@ internal class PlayerService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+
+        notificationUseCase = DependencyInjector.injector.createNotificationUseCase(this)
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
@@ -61,9 +57,8 @@ internal class PlayerService : Service() {
 
         if (!isServiceStarted) {
             // start foreground.
-            val notification = notificationUseCase.createNowPlayingNotification(
-                    this, nowPlayingItem, getString(R.string.now_loading_text))
-            startForeground(NOTIFICATION_ID, notification)
+            val notification = notificationUseCase.createNowPlayingNotification(nowPlayingItem, getString(R.string.now_loading_text))
+            startForeground(AppPrefs.NOW_PLAYING_NOTIFICATION_ID, notification)
         }
 
         isServiceStarted = true
@@ -78,7 +73,7 @@ internal class PlayerService : Service() {
 
         player.setAudioAttributes(audioAttr)
         player.setOnErrorListener { mp, what, extra ->
-            Log.e(AppPrefs.logTag, "what:$what, extra:$extra")
+            Log.e(AppPrefs.LOG_TAG, "what:$what, extra:$extra")
             return@setOnErrorListener true
         }
         player.setOnCompletionListener {

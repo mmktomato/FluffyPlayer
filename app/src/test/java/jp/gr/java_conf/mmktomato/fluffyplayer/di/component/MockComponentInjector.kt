@@ -2,13 +2,13 @@ package jp.gr.java_conf.mmktomato.fluffyplayer.di.component
 
 import android.content.Context
 import jp.gr.java_conf.mmktomato.fluffyplayer.ActivityBase
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.AppModuleMock
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.DatabaseModuleMock
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.DbxModuleMock
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.SharedPrefsModuleMock
+import jp.gr.java_conf.mmktomato.fluffyplayer.db.AppDatabase
+import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.*
+import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.FileBrowseActivityPresenterImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.PlayerActivityPresenterImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.SettingsActivityPresenterImpl
+import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.NotificationUseCase
 
 /**
  * Inject mocks.
@@ -69,6 +69,9 @@ class MockComponentInjector : ComponentInjector() {
                 .dbxModuleMock(DbxModuleMock(true))
                 .build()
                 .inject(presenter)
+
+        presenter.db = createAppDatabase(ctx)
+        presenter.notificationUseCase = createNotificationUseCase(ctx)
     }
 
     /**
@@ -87,15 +90,28 @@ class MockComponentInjector : ComponentInjector() {
     }
 
     /**
-     * Inject AppDatabase to PlayerActivityPresenter.
+     * Returns an instance of AppDatabase.
      *
-     * @param presenter the instance to inject dependencies.
+     * @param ctx this argument is ignored.
      */
-    override fun injectAppDatabase(presenter: PlayerActivityPresenterImpl) {
-        presenter.db = DaggerDatabaseComponentMock.builder()
+    override fun createAppDatabase(ctx: Context): AppDatabase {
+        return DaggerDatabaseComponentMock.builder()
                 .appModuleMock(AppModuleMock())
                 .databaseModuleMock(DatabaseModuleMock())
                 .build()
                 .createAppDatabaseMock()
+    }
+
+    /**
+     * Returns an instance of NotificationUseCase.
+     *
+     * @param ctx this argument is ignored.
+     */
+    override fun createNotificationUseCase(ctx: Context): NotificationUseCase {
+        return DaggerNotificationComponentMock.builder()
+                .appModuleMock(AppModuleMock())
+                .notificationModuleMock(NotificationModuleMock())
+                .build()
+                .createNotificationUseCaseMock()
     }
 }

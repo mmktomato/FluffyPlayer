@@ -1,18 +1,21 @@
 package jp.gr.java_conf.mmktomato.fluffyplayer.prefs
 
-import jp.gr.java_conf.mmktomato.fluffyplayer.R
-
 /**
  * The Application Preferences.
  */
-internal object AppPrefs {
+object AppPrefs {
     /**
      * The Application name.
      */
-    val appName = "Fluffy Player" //getString(R.string.app_name)
+    const val APP_NAME = "Fluffy Player" //getString(R.string.app_name)
 
     /**
      * The tag of logger.
      */
-    val logTag = appName
+    const val LOG_TAG = APP_NAME
+
+    /**
+     * The now playing notification id.
+     */
+    const val NOW_PLAYING_NOTIFICATION_ID = 1
 }

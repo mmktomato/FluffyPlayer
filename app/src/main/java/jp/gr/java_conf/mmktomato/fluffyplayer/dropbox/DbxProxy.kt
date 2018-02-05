@@ -67,7 +67,7 @@ class DbxProxyImpl constructor(private val ctx: Context, private val sharedPrefs
     private var client: DbxClientV2
 
     init {
-        val config = DbxRequestConfig(AppPrefs.appName)
+        val config = DbxRequestConfig(AppPrefs.APP_NAME)
         client = DbxClientV2(config, sharedPrefs.dbxAccessToken)
     }
 

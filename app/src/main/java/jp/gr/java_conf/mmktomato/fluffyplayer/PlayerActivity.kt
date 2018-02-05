@@ -55,13 +55,11 @@ class PlayerActivity : ActivityBase() {
                 bindService = { intent -> bindService(intent, connection, Context.BIND_AUTO_CREATE) },
                 unbindService = { unbindService(connection) },
                 getString = ::getString,
-                notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager,
                 playButton = findViewById<Button>(R.id.playButton),
                 resources = resources,
                 mediaMetadataRetriever = MediaMetadataRetriever())
 
         DependencyInjector.injector.inject(presenter as PlayerActivityPresenterImpl, this)
-        DependencyInjector.injector.injectAppDatabase(presenter as PlayerActivityPresenterImpl)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
