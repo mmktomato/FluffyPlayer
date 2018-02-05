@@ -5,14 +5,19 @@ import android.content.Context
 import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_MUSIC_TITLE
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DaggerNotificationUseCaseTestComponent
+import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DependencyInjector
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.MockComponentInjector
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.AppModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.PlaylistModuleMock
+import jp.gr.java_conf.mmktomato.fluffyplayer.entity.MusicMetadata
+import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
+import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.AppPrefs
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.*
 import org.robolectric.RobolectricTestRunner
 import javax.inject.Inject
 
@@ -45,18 +50,23 @@ class NotificationUseCaseTest {
                 .build()
                 .inject(this)
 
-        useCase = NotificationUseCase()
+        useCase = DependencyInjector.injector.createNotificationUseCase(ctx)
     }
 
     @Test
-    fun createNowPlayingNotification_ReturnsCorrectOne() {
-        val notification = useCase.createNowPlayingNotification(
-                ctx = ctx,
-                nowPlayingItem = nowPlayingItem,
-                musicTitle = DUMMY_MUSIC_TITLE)
+    fun createNowPlayingNotification() {
+        val notification = useCase.createNowPlayingNotification(nowPlayingItem, DUMMY_MUSIC_TITLE)
 
         assertEquals("Now playing", notification.extras["android.title"])
         assertEquals(DUMMY_MUSIC_TITLE, notification.extras["android.text"])
         assertEquals(Notification.FLAG_NO_CLEAR, notification.flags)
+    }
+
+    @Test
+    fun updateNotification() {
+        useCase.updateNowPlayingNotification(nowPlayingItem, DUMMY_MUSIC_TITLE)
+
+        verify(useCase.notificationManager, times(1))
+                .notify(eq(AppPrefs.NOW_PLAYING_NOTIFICATION_ID), any(Notification::class.java))
     }
 }

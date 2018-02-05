@@ -14,7 +14,6 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
 import jp.gr.java_conf.mmktomato.fluffyplayer.entity.MusicMetadata
-import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceBinder
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceState
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.PlayerActivityViewModel
@@ -31,12 +30,12 @@ internal interface PlayerActivityPresenter {
     /**
      * the database.
      */
-    val db: AppDatabase
+    var db: AppDatabase
 
     /**
      * the NotificationUseCase.
      */
-    val notificationUseCase: NotificationUseCase
+    var notificationUseCase: NotificationUseCase
 
     /**
      * the view model of this activity.
@@ -156,7 +155,9 @@ internal interface PlayerActivityPresenter {
         val musicMetadata = refreshUiDeferred.await()
         startMusicJob.join()
 
-        updateNotification(musicMetadata)
+        notificationUseCase.updateNowPlayingNotification(
+                nowPlayingItem!!,
+                musicMetadata.title ?: getString(R.string.unknown_music_title))
     }
 
     /**
@@ -200,13 +201,6 @@ internal interface PlayerActivityPresenter {
     }
 
     /**
-     * Updates now playing notification.
-     *
-     * @param metadata a music metadata.
-     */
-    fun updateNotification(metadata: MusicMetadata)
-
-    /**
      * Returns the empty album artwork.
      */
     val noArtworkImage: Drawable
@@ -223,7 +217,6 @@ internal interface PlayerActivityPresenter {
  * @param bindService the callback to bind a service.
  * @param unbindService the callback to unbind a service.
  * @param getString the callback to get string resources.
- * @param notificationManager the NotificationManager.
  * @param playButton the play button.
  * @param resources android's resource.
  * @param mediaMetadataRetriever the mediaMetadataRetriever.
@@ -237,7 +230,6 @@ class PlayerActivityPresenterImpl(
         private val bindService: (Intent) -> Unit,
         override val unbindService: () -> Unit,
         override val getString: (Int) -> String,
-        private val notificationManager: NotificationManager,
         private val playButton: Button,
         private val resources: Resources,
         override val mediaMetadataRetriever: MediaMetadataRetriever) : PlayerActivityPresenter {
@@ -262,7 +254,7 @@ class PlayerActivityPresenterImpl(
     /**
      * the NotificationUseCase.
      */
-    override val notificationUseCase = NotificationUseCase()
+    override lateinit var notificationUseCase: NotificationUseCase
 
     /**
      * the player service state.
@@ -354,18 +346,6 @@ class PlayerActivityPresenterImpl(
      */
     override fun getMusicUri(): Deferred<String> {
         return dbxProxy.getTemporaryLink(nowPlayingItem!!.path)
-    }
-
-    /**
-     * Updates now playing notification.
-     *
-     * @param metadata a music metadata.
-     */
-    override fun updateNotification(metadata: MusicMetadata) {
-        val notification = notificationUseCase.createNowPlayingNotification(
-                ctx, nowPlayingItem!!, metadata.title ?: getString(R.string.unknown_music_title))
-
-        notificationManager.notify(PlayerService.NOTIFICATION_ID, notification)
     }
 
     /**

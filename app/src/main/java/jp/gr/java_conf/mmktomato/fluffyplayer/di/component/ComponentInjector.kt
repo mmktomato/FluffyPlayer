@@ -2,13 +2,13 @@ package jp.gr.java_conf.mmktomato.fluffyplayer.di.component
 
 import android.content.Context
 import jp.gr.java_conf.mmktomato.fluffyplayer.ActivityBase
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.AppModule
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.DatabaseModule
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.DbxModule
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.SharedPrefsModule
+import jp.gr.java_conf.mmktomato.fluffyplayer.db.AppDatabase
+import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.*
+import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.FileBrowseActivityPresenterImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.PlayerActivityPresenterImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.SettingsActivityPresenterImpl
+import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.NotificationUseCase
 
 /**
  * Injects depedencies.
@@ -62,6 +62,9 @@ abstract class ComponentInjector {
                 .dbxModule(DbxModule())
                 .build()
                 .inject(presenter)
+
+        presenter.db = createAppDatabase(ctx)
+        presenter.notificationUseCase = createNotificationUseCase(ctx)
     }
 
     /**
@@ -80,18 +83,31 @@ abstract class ComponentInjector {
     }
 
     /**
-     * Inject AppDatabase to PlayerActivityPresenter.
+     * Returns an instance of AppDatabase.
      *
-     * @param presenter the instance to inject dependencies.
+     * @param ctx android's Context.
      */
-    open fun injectAppDatabase(presenter: PlayerActivityPresenterImpl) {
+    open fun createAppDatabase(ctx: Context): AppDatabase {
         if (!::dbComponent.isInitialized) {
             dbComponent = DaggerDatabaseComponent.builder()
-                    .appModule(AppModule(presenter.ctx))
+                    .appModule(AppModule(ctx))
                     .databaseModule(DatabaseModule())
                     .build()
         }
-        presenter.db = dbComponent.createAppDatabase()
+        return dbComponent.createAppDatabase()
+    }
+
+    /**
+     * Returns an instance of NotificationUseCase.
+     *
+     * @param ctx android's Context.
+     */
+    open fun createNotificationUseCase(ctx: Context): NotificationUseCase {
+        return DaggerNotificationComponent.builder()
+                .appModule(AppModule(ctx))
+                .notificationModule(NotificationModule())
+                .build()
+                .createNotificationUseCase()
     }
 }
 
