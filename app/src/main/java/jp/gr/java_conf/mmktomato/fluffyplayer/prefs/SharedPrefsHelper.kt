@@ -16,6 +16,18 @@ interface SharedPrefsHelper {
      * Removes Dropbox access token.
      */
     fun removeDbxAccessToken()
+
+    /**
+     * a Last.fm user name.
+     */
+    val lastFmUserName: String
+            get() = "dummy"  // TODO: fix this.
+
+    /**
+     * a Last.fm password digest.
+     */
+    val lastFmPasswordDigest: String
+            get() = "dummy"  // TODO: fix this.
 }
 
 /**
