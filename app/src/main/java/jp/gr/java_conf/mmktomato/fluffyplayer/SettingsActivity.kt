@@ -22,7 +22,7 @@ class SettingsActivity : ActivityBase() {
 
         presenter = SettingsActivityPresenterImpl(
                 viewModel = viewModel,
-                connectDropboxButton = findViewById<Button>(R.id.connectDropboxButton))
+                connectDropboxButton = findViewById(R.id.connectDropboxButton))
 
         DependencyInjector.injector.inject(presenter as SettingsActivityPresenterImpl, this)
     }
@@ -40,5 +40,11 @@ class SettingsActivity : ActivityBase() {
         super.onResume()
 
         presenter.onResume()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        presenter.onDestroy()
     }
 }

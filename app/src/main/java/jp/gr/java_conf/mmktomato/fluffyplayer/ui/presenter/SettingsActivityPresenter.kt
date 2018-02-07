@@ -2,11 +2,13 @@ package jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter
 
 import android.widget.Button
 import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
+import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.AppPrefs
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelper
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.SettingsActivityViewModel
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.launch
+import java.security.MessageDigest
 import javax.inject.Inject
 
 /**
@@ -18,13 +20,15 @@ interface SettingsActivityPresenter {
 
     fun onResume()
 
+    fun onDestroy()
+
     /**
      * Refreshes UI Component.
      */
     fun refreshUi(): Job
 
     /**
-     * Called when the ConnectDropboxButton is clicked.
+     * Called when the connectDropboxButton is clicked.
      */
     fun onConnectDropboxButtonClick()
 }
@@ -77,16 +81,38 @@ class SettingsActivityPresenterImpl(
         refreshUi()
     }
 
+    override fun onDestroy() {
+        // Last.fm user name
+        sharedPrefs.lastFmUserName = viewModel.lastFmUserNameText.get()
+
+        // Last.fm password
+        val plainPassword = viewModel.lastFmPasswordText.get()
+        when (plainPassword) {
+            null, "" -> sharedPrefs.lastFmPasswordDigest = ""
+            AppPrefs.LAST_FM_PASSWORD_MARKER -> { /* do nothing. */ }
+            else -> {
+                val md5 = MessageDigest.getInstance("MD5").digest(plainPassword.toByteArray(Charsets.UTF_8))
+                sharedPrefs.lastFmPasswordDigest = com.dropbox.core.util.StringUtil.binaryToHex(md5)
+            }
+        }
+    }
+
     /**
      * Refreshes UI Component.
      */
     override fun refreshUi(): Job {
-        viewModel.connectDropboxButtonText.set(
-                if (dbxProxy.isAuthenticated) "disconnect" else "connect")
-
         return launch(UI) {
+            viewModel.connectDropboxButtonText.set(
+                    if (dbxProxy.isAuthenticated) "disconnect" else "connect")
+
+            // This needs a coroutine context.
             viewModel.dropboxAuthStatusText.set(
                     if (dbxProxy.isAuthenticated) dbxProxy.getDisplayName().await() else "(not connected)")
+
+            viewModel.lastFmUserNameText.set(sharedPrefs.lastFmUserName)
+
+            viewModel.lastFmPasswordText.set(
+                    if (sharedPrefs.lastFmPasswordDigest.isNullOrEmpty()) "" else AppPrefs.LAST_FM_PASSWORD_MARKER)
         }
     }
 
