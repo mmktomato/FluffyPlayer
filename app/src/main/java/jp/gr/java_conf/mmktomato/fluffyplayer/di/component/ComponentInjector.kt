@@ -4,11 +4,11 @@ import android.content.Context
 import jp.gr.java_conf.mmktomato.fluffyplayer.ActivityBase
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.AppDatabase
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.*
-import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.FileBrowseActivityPresenterImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.PlayerActivityPresenterImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.SettingsActivityPresenterImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.NotificationUseCase
+import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.ScrobbleUseCase
 
 /**
  * Injects depedencies.
@@ -18,6 +18,11 @@ abstract class ComponentInjector {
      * the DatabaseComponent.
      */
     protected lateinit var dbComponent: DatabaseComponent
+
+    /**
+     * the ScrobbleComponent.
+     */
+    protected lateinit var scrobbleComponent: ScrobbleComponent
 
     /**
      * Inject to ActivityBase.
@@ -108,6 +113,24 @@ abstract class ComponentInjector {
                 .notificationModule(NotificationModule())
                 .build()
                 .createNotificationUseCase()
+    }
+
+    /**
+     * Returns an instance of ScrobbleComponent.
+     *
+     * @param ctx android's Context.
+     */
+    open fun createScrobbleUseCase(ctx: Context): ScrobbleUseCase {
+        if (!::scrobbleComponent.isInitialized) {
+            scrobbleComponent = DaggerScrobbleComponent.builder()
+                    .appModule(AppModule(ctx))
+                    .sharedPrefsModule(SharedPrefsModule())
+                    .scrobbleModule(ScrobbleModule())
+                    .build()
+        }
+        return scrobbleComponent.createScrobbleUseCase()
+
+        // TODO: override this method in sub class.
     }
 }
 
