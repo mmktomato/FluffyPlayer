@@ -18,4 +18,9 @@ object AppPrefs {
      * The now playing notification id.
      */
     const val NOW_PLAYING_NOTIFICATION_ID = 1
+
+    /**
+     * The dummy marker for Last.fm password.
+     */
+    const val LAST_FM_PASSWORD_MARKER = "fluffyDummyPass"
 }
