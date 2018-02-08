@@ -6,10 +6,7 @@ import android.content.Intent
 import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.widget.Button
-import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_DBX_FILE_PATH
-import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_MUSIC_TITLE
-import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_MUSIC_URI
-import jp.gr.java_conf.mmktomato.fluffyplayer.R
+import jp.gr.java_conf.mmktomato.fluffyplayer.*
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DaggerPlayerActivityPresenterTestComponent
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DependencyInjector
@@ -111,9 +108,9 @@ class PlayerActivityPresenterTest {
                 resources = ctx.resources,
                 mediaMetadataRetriever = mediaMetadataRetriever)
 
-        DependencyInjector.injector.inject(presenter as PlayerActivityPresenterImpl, ctx)
-
         runBlocking {
+            DependencyInjector.injector.inject(presenter as PlayerActivityPresenterImpl, ctx)
+
             presenter.onCreate().join()
         }
     }
@@ -130,6 +127,23 @@ class PlayerActivityPresenterTest {
                 isBound = isBound,
                 onMusicFinished = { },
                 onPlayerStateChangedListener = { })
+    }
+
+    /**
+     * Returns a dummy music metadata.
+     */
+    private fun createDummyMusicMetadata(): MusicMetadata {
+        // TODO: this is duplicated with ScrobbleUseCateTest#createMusicMetadata.
+
+        val artwork = ctx.resources.getDrawable(R.drawable.ic_no_image, null)
+        return MusicMetadata(
+                title = DUMMY_MUSIC_TITLE,
+                artist = DUMMY_MUSIC_ARTIST,
+                duration = DUMMY_MUSIC_DURATION,
+                trackNumber = DUMMY_MUSIC_TRACK_NUMBER,
+                artwork = artwork,
+                albumTitle = DUMMY_ALBUM_TITLE,
+                albumArtist = DUMMY_ALBUM_ARTIST)
     }
 
     @Test
@@ -251,6 +265,9 @@ class PlayerActivityPresenterTest {
         verify(presenter.notificationUseCase.notificationManager, times(1)).notify(eq(AppPrefs.NOW_PLAYING_NOTIFICATION_ID), any(Notification::class.java))
         verify(player, times(1)).start()
         assertEquals(PlaylistItem.Status.PLAYING, presenter.nowPlayingItem!!.status)
+
+        val expectedMetadata = createDummyMusicMetadata()
+        verify(presenter.scrobbleUseCase, times(1)).updateNowPlaying(MockitoWorkaround.eq(expectedMetadata))
     }
 
     @Test
@@ -266,20 +283,20 @@ class PlayerActivityPresenterTest {
     fun getMusicMetadata() {
         runBlocking {
             val metadata = presenter.getMusicMetadata(DUMMY_MUSIC_URI).await()
+            val expected = createDummyMusicMetadata()
 
-            assertEquals(DUMMY_MUSIC_TITLE, metadata.title)
+            assertEquals(expected, metadata)
         }
     }
 
     @Test
     fun setMusicMetadata() {
-        val artwork = ctx.resources.getDrawable(R.drawable.ic_no_image, null)
-        val metadata = MusicMetadata(DUMMY_MUSIC_TITLE, artwork)
+        val metadata = createDummyMusicMetadata()
 
         presenter.setMusicMetadata(metadata)
 
         assertEquals(DUMMY_MUSIC_TITLE, viewModel.title.get())
-        assertEquals(artwork, viewModel.artwork.get())
+        assertEquals(metadata.artwork, viewModel.artwork.get())
     }
 
     @Test

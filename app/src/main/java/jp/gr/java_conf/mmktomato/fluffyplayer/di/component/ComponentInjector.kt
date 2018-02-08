@@ -9,6 +9,7 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.PlayerActivityPresent
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.SettingsActivityPresenterImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.NotificationUseCase
 import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.ScrobbleUseCase
+import kotlinx.coroutines.experimental.async
 
 /**
  * Injects depedencies.
@@ -60,7 +61,7 @@ abstract class ComponentInjector {
      * @param presenter the instance to inject dependencies.
      * @param ctx android's Context.
      */
-    open fun inject(presenter: PlayerActivityPresenterImpl, ctx: Context) {
+    open suspend fun inject(presenter: PlayerActivityPresenterImpl, ctx: Context) {
         DaggerActivityPresenterComponent.builder()
                 .appModule(AppModule(ctx))
                 .sharedPrefsModule(SharedPrefsModule())
@@ -70,6 +71,7 @@ abstract class ComponentInjector {
 
         presenter.db = createAppDatabase(ctx)
         presenter.notificationUseCase = createNotificationUseCase(ctx)
+        presenter.scrobbleUseCase = createScrobbleUseCase(ctx).await()
     }
 
     /**
@@ -120,17 +122,24 @@ abstract class ComponentInjector {
      *
      * @param ctx android's Context.
      */
-    open fun createScrobbleUseCase(ctx: Context): ScrobbleUseCase {
-        if (!::scrobbleComponent.isInitialized) {
-            scrobbleComponent = DaggerScrobbleComponent.builder()
+    open fun createScrobbleUseCase(ctx: Context) = async {
+        return@async if (::scrobbleComponent.isInitialized) {
+            scrobbleComponent.createScrobbleUseCase()
+        }
+        else {
+            val component = DaggerScrobbleComponent.builder()
                     .appModule(AppModule(ctx))
                     .sharedPrefsModule(SharedPrefsModule())
                     .scrobbleModule(ScrobbleModule())
                     .build()
-        }
-        return scrobbleComponent.createScrobbleUseCase()
+            val ret = component.createScrobbleUseCase()
 
-        // TODO: override this method in sub class.
+            if (ret.isValid) {
+                scrobbleComponent = component  // make component singleton.
+            }
+
+            ret
+        }
     }
 }
 

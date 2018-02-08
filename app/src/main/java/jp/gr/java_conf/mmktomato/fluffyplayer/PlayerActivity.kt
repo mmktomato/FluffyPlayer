@@ -1,6 +1,5 @@
 package jp.gr.java_conf.mmktomato.fluffyplayer
 
-import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -18,6 +17,8 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.PlayerActivityPresenter
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.PlayerActivityPresenterImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.PlayerActivityViewModel
+import kotlinx.coroutines.experimental.android.UI
+import kotlinx.coroutines.experimental.launch
 
 class PlayerActivity : ActivityBase() {
     private lateinit var presenter: PlayerActivityPresenter
@@ -39,7 +40,7 @@ class PlayerActivity : ActivityBase() {
     /**
      * Initializes the `presenter`.
      */
-    private fun initializePresenter() {
+    private suspend fun initializePresenter() {
         val viewModel = PlayerActivityViewModel()
         val binding = DataBindingUtil.setContentView<ActivityPlayerBinding>(this, R.layout.activity_player)
         binding.viewModel = viewModel
@@ -66,9 +67,11 @@ class PlayerActivity : ActivityBase() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_player)
 
-        initializePresenter()
+        launch(UI) {
+            initializePresenter()
 
-        presenter.onCreate()
+            presenter.onCreate()
+        }
     }
 
     override fun onDestroy() {
