@@ -1,6 +1,5 @@
 package jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter
 
-import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
@@ -8,6 +7,7 @@ import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
 import android.os.IBinder
 import android.widget.Button
+import android.widget.Toast
 import jp.gr.java_conf.mmktomato.fluffyplayer.R
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.AppDatabase
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
@@ -18,6 +18,7 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceBinder
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceState
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.PlayerActivityViewModel
 import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.NotificationUseCase
+import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.ScrobbleUseCase
 import kotlinx.coroutines.experimental.*
 import java.io.ByteArrayInputStream
 import java.util.*
@@ -28,6 +29,11 @@ import javax.inject.Inject
  */
 internal interface PlayerActivityPresenter {
     /**
+     * An android's Context.
+     */
+    val ctx: Context
+
+    /**
      * the database.
      */
     var db: AppDatabase
@@ -36,6 +42,11 @@ internal interface PlayerActivityPresenter {
      * the NotificationUseCase.
      */
     var notificationUseCase: NotificationUseCase
+
+    /**
+     * the ScrobbleUseCase.
+     */
+    var scrobbleUseCase: ScrobbleUseCase
 
     /**
      * the view model of this activity.
@@ -158,6 +169,11 @@ internal interface PlayerActivityPresenter {
         notificationUseCase.updateNowPlayingNotification(
                 nowPlayingItem!!,
                 musicMetadata.title ?: getString(R.string.unknown_music_title))
+
+        val res = scrobbleUseCase.updateNowPlaying(musicMetadata)
+        if (res != null && (!res.isSuccessful || res.isIgnored)) {
+            Toast.makeText(ctx, "Last.fm status is not updated.", Toast.LENGTH_SHORT).show()
+        }
     }
 
     /**
@@ -195,7 +211,12 @@ internal interface PlayerActivityPresenter {
     fun resetUI() {
         setMusicMetadata(MusicMetadata(
                 title = getString(R.string.now_loading_text),
-                artwork = noArtworkImage))
+                artist = "",
+                duration = -1,
+                trackNumber = -1,
+                artwork = noArtworkImage,
+                albumTitle = "",
+                albumArtist = ""))
 
         viewModel.isPlaying.set(false)
     }
@@ -238,7 +259,7 @@ class PlayerActivityPresenterImpl(
      * An android's Context.
      */
     @Inject
-    lateinit var ctx: Context
+    override lateinit var ctx: Context
 
     /**
      * A DbxProxy.
@@ -255,6 +276,11 @@ class PlayerActivityPresenterImpl(
      * the NotificationUseCase.
      */
     override lateinit var notificationUseCase: NotificationUseCase
+
+    /**
+     * the ScrobbleUseCase.
+     */
+    override lateinit var scrobbleUseCase: ScrobbleUseCase
 
     /**
      * the player service state.
@@ -326,7 +352,16 @@ class PlayerActivityPresenterImpl(
         mediaMetadataRetriever.setDataSource(uri, mapOf<String, String>())
 
         // title
-        val title = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+        val title = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE) ?: ""
+
+        // artist
+        val artist = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST) ?: ""
+
+        // duration
+        val duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION).toIntOrNull() ?: -1
+
+        // track number
+        val trackNumber = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER).toIntOrNull() ?: -1
 
         // artwork
         val artworkBytes: ByteArray? = mediaMetadataRetriever.embeddedPicture
@@ -338,7 +373,20 @@ class PlayerActivityPresenterImpl(
             }
         }
 
-        return@async MusicMetadata(title, artworkDrawable)
+        // album title
+        val albumTitle = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM) ?: ""
+
+        // album artist
+        val albumArtist = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST) ?: ""
+
+        return@async MusicMetadata(
+                title = title,
+                artist = artist,
+                duration = duration,
+                trackNumber = trackNumber,
+                artwork = artworkDrawable,
+                albumTitle = albumTitle,
+                albumArtist = albumArtist)
     }
 
     /**
