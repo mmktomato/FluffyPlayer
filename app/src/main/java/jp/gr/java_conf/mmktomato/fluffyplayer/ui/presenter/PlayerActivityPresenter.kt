@@ -8,6 +8,7 @@ import android.media.MediaMetadataRetriever
 import android.os.IBinder
 import android.widget.Button
 import android.widget.Toast
+import de.umass.lastfm.scrobble.ScrobbleResult
 import jp.gr.java_conf.mmktomato.fluffyplayer.R
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.AppDatabase
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
@@ -120,7 +121,7 @@ internal interface PlayerActivityPresenter {
 
         onPlayerStateChanged()
 
-        val musicUri = getMusicUri().await()
+        val musicUri = getMusicUri(nowPlayingItem!!.path).await()
 
         when (svcState.binder.isPlaying) {
             true ->  startRefreshUI(musicUri)
@@ -170,10 +171,8 @@ internal interface PlayerActivityPresenter {
                 nowPlayingItem!!,
                 musicMetadata.title ?: getString(R.string.unknown_music_title))
 
-        val res = scrobbleUseCase.updateNowPlaying(musicMetadata)
-        if (res != null && (!res.isSuccessful || res.isIgnored)) {
-            Toast.makeText(ctx, "Last.fm status is not updated.", Toast.LENGTH_SHORT).show()
-        }
+        val result = scrobbleUseCase.updateNowPlaying(musicMetadata)
+        handleScrobbleResult(result)
     }
 
     /**
@@ -202,8 +201,10 @@ internal interface PlayerActivityPresenter {
 
     /**
      * Returns the music uri.
+     *
+     * @param dbxPath the dropbox path.
      */
-    fun getMusicUri(): Deferred<String>
+    fun getMusicUri(dbxPath: String): Deferred<String>
 
     /**
      * Resets UI Components.
@@ -219,6 +220,17 @@ internal interface PlayerActivityPresenter {
                 albumArtist = ""))
 
         viewModel.isPlaying.set(false)
+    }
+
+    /**
+     * Handles result of scrobble.
+     *
+     * @param result an instance of ScrobbleResult.
+     */
+    fun handleScrobbleResult(result: ScrobbleResult?) {
+        if (result != null && (!result.isSuccessful || result.isIgnored)) {
+            Toast.makeText(ctx, R.string.last_fm_failure, Toast.LENGTH_SHORT).show()
+        }
     }
 
     /**
@@ -333,6 +345,11 @@ class PlayerActivityPresenterImpl(
         nowPlayingItem!!.status = PlaylistItem.Status.PLAYED
         db.playlistDao.update(nowPlayingItem!!)
 
+        val musicUri = getMusicUri(nowPlayingItem!!.path).await()  // TODO: cache this.
+        val metadata = getMusicMetadata(musicUri).await()  // TODO: cache this.
+        val result = scrobbleUseCase.scrobble(metadata)
+        handleScrobbleResult(result)
+
         val nextItem = db.playlistDao.getNext()
         if (nextItem != null) {
             nextItem.status = PlaylistItem.Status.PLAYING
@@ -340,8 +357,8 @@ class PlayerActivityPresenterImpl(
             nowPlayingItem = nextItem
             db.playlistDao.update(nowPlayingItem!!)
 
-            val musicUri = getMusicUri().await()
-            startMusicWithRefreshUi(musicUri).join()
+            val nextMusicUri = getMusicUri(nowPlayingItem!!.path).await()
+            startMusicWithRefreshUi(nextMusicUri).join()
         }
     }
 
@@ -391,9 +408,11 @@ class PlayerActivityPresenterImpl(
 
     /**
      * Returns a music uri.
+     *
+     * @param dbxPath a dropbox path.
      */
-    override fun getMusicUri(): Deferred<String> {
-        return dbxProxy.getTemporaryLink(nowPlayingItem!!.path)
+    override fun getMusicUri(dbxPath: String): Deferred<String> {
+        return dbxProxy.getTemporaryLink(dbxPath)
     }
 
     /**

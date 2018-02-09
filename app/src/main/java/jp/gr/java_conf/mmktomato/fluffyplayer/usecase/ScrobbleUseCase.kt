@@ -44,6 +44,14 @@ interface ScrobbleUseCase {
      * @return the scrobble result.
      */
     fun updateNowPlaying(metadata: MusicMetadata): ScrobbleResult?
+
+    /**
+     * Scrobbles music to Last.fm.
+     *
+     * @param metadata the music metadata.
+     * @return the scrobble result.
+     */
+    fun scrobble(metadata: MusicMetadata): ScrobbleResult?
 }
 
 /**
@@ -65,6 +73,15 @@ class ScrobbleUseCaseImpl(private val session: Session) : ScrobbleUseCase {
 
         return Track.updateNowPlaying(scrobbleData, session)
     }
+
+    /**
+     * Override super.scrobble.
+     */
+    override fun scrobble(metadata: MusicMetadata): ScrobbleResult? {
+        val scrobbleData = createScrobbleData(metadata)
+
+        return Track.scrobble(scrobbleData, session)
+    }
 }
 
 /**
@@ -75,6 +92,10 @@ class InvalidScrobbleUseCaseImpl() : ScrobbleUseCase {
     override val isValid: Boolean = false
 
     override fun updateNowPlaying(metadata: MusicMetadata): ScrobbleResult? {
+        return null
+    }
+
+    override fun scrobble(metadata: MusicMetadata): ScrobbleResult? {
         return null
     }
 }

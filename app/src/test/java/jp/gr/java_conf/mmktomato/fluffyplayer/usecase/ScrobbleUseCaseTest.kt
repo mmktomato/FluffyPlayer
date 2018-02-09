@@ -76,4 +76,9 @@ class ScrobbleUseCaseTest {
     fun updateNowPlaying() {
         // TODO: add test for updateNowPlaying
     }
+
+    @Test
+    fun scrobble() {
+        // TODO: add test for scrobble.
+    }
 }
