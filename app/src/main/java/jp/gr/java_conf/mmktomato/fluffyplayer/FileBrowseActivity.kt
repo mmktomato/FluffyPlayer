@@ -5,7 +5,7 @@ import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DependencyInjector
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.DbxNodeMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.FileBrowseActivityPresenter
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.FileBrowseActivityPresenterImpl
 import kotlinx.coroutines.experimental.CommonPool

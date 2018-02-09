@@ -5,6 +5,7 @@ import de.umass.lastfm.Track
 import de.umass.lastfm.scrobble.ScrobbleData
 import de.umass.lastfm.scrobble.ScrobbleResult
 import jp.gr.java_conf.mmktomato.fluffyplayer.entity.MusicMetadata
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.LastFmProxy
 import javax.inject.Inject
 
 /**
@@ -58,8 +59,9 @@ interface ScrobbleUseCase {
  * Implementation of ScrobbleUseCase.
  *
  * @param session a Last.fm's session.
+ * @param lastFmProxy a Last'fm proxy.
  */
-class ScrobbleUseCaseImpl(private val session: Session) : ScrobbleUseCase {
+class ScrobbleUseCaseImpl(private val session: Session, private val lastFmProxy: LastFmProxy) : ScrobbleUseCase {
     /**
      * Override super.isValid.
      */
@@ -71,7 +73,7 @@ class ScrobbleUseCaseImpl(private val session: Session) : ScrobbleUseCase {
     override fun updateNowPlaying(metadata: MusicMetadata): ScrobbleResult? {
         val scrobbleData = createScrobbleData(metadata)
 
-        return Track.updateNowPlaying(scrobbleData, session)
+        return lastFmProxy.updateNowPlaying(scrobbleData, session)
     }
 
     /**
@@ -80,7 +82,7 @@ class ScrobbleUseCaseImpl(private val session: Session) : ScrobbleUseCase {
     override fun scrobble(metadata: MusicMetadata): ScrobbleResult? {
         val scrobbleData = createScrobbleData(metadata)
 
-        return Track.scrobble(scrobbleData, session)
+        return lastFmProxy.scrobble(scrobbleData, session)
     }
 }
 
@@ -88,7 +90,7 @@ class ScrobbleUseCaseImpl(private val session: Session) : ScrobbleUseCase {
  * Dummy implementation of ScrobbleUseCase.
  * This class is used when Last.fm scrobbling is not enabled.
  */
-class InvalidScrobbleUseCaseImpl() : ScrobbleUseCase {
+class InvalidScrobbleUseCaseImpl : ScrobbleUseCase {
     override val isValid: Boolean = false
 
     override fun updateNowPlaying(metadata: MusicMetadata): ScrobbleResult? {

@@ -12,8 +12,8 @@ import de.umass.lastfm.scrobble.ScrobbleResult
 import jp.gr.java_conf.mmktomato.fluffyplayer.R
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.AppDatabase
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.DbxNodeMetadata
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.DbxProxy
 import jp.gr.java_conf.mmktomato.fluffyplayer.entity.MusicMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceBinder
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceState

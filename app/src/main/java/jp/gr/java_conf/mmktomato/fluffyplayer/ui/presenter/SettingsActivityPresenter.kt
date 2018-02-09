@@ -1,7 +1,7 @@
 package jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter
 
 import android.widget.Button
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.DbxProxy
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.AppPrefs
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelper
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.SettingsActivityViewModel

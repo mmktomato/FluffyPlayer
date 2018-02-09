@@ -11,8 +11,8 @@ import com.dropbox.core.v2.files.Metadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.FileBrowseActivity
 import jp.gr.java_conf.mmktomato.fluffyplayer.PlayerActivity
 import jp.gr.java_conf.mmktomato.fluffyplayer.R
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.DbxNodeMetadata
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.DbxProxy
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.DbxFileAdapter
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.DbxFileAdapterImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.ListViewOnScrollListener

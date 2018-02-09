@@ -16,8 +16,8 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.AppModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.DbxModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.PlayerModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.SharedPrefsModuleMock
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.DbxNodeMetadata
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.DbxProxy
 import jp.gr.java_conf.mmktomato.fluffyplayer.entity.MusicMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceBinder
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceState
@@ -30,7 +30,6 @@ import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.*
 import org.mockito.Mockito.*
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.shadows.ShadowToast

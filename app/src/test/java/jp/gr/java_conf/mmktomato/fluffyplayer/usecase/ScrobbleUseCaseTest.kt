@@ -5,6 +5,7 @@ import de.umass.lastfm.Session
 import jp.gr.java_conf.mmktomato.fluffyplayer.*
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.MockComponentInjector
 import jp.gr.java_conf.mmktomato.fluffyplayer.entity.MusicMetadata
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.LastFmProxy
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.BeforeClass
@@ -20,6 +21,7 @@ import org.robolectric.RuntimeEnvironment
 @RunWith(RobolectricTestRunner::class)
 class ScrobbleUseCaseTest {
     private lateinit var ctx: Context
+    private lateinit var lastFmProxy: LastFmProxy
     private lateinit var useCase: ScrobbleUseCase
 
     companion object {
@@ -33,9 +35,10 @@ class ScrobbleUseCaseTest {
     @Before
     fun setUp() {
         ctx = RuntimeEnvironment.application
+        lastFmProxy = mock(LastFmProxy::class.java)
 
         val session = mock(Session::class.java)
-        useCase = ScrobbleUseCaseImpl(session)
+        useCase = ScrobbleUseCaseImpl(session, lastFmProxy)
     }
 
     /**
@@ -74,11 +77,17 @@ class ScrobbleUseCaseTest {
 
     @Test
     fun updateNowPlaying() {
-        // TODO: add test for updateNowPlaying
+        val metadata = createDummyMusicMetadata()
+        val result = useCase.updateNowPlaying(metadata)
+
+        verify(lastFmProxy, times(1)).updateNowPlaying(MockitoWorkaround.any(), MockitoWorkaround.any())
     }
 
     @Test
     fun scrobble() {
-        // TODO: add test for scrobble.
+        val metadata = createDummyMusicMetadata()
+        val result = useCase.scrobble(metadata)
+
+        verify(lastFmProxy, times(1)).scrobble(MockitoWorkaround.any(), MockitoWorkaround.any())
     }
 }

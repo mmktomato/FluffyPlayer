@@ -7,7 +7,7 @@ import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.TextView
 import jp.gr.java_conf.mmktomato.fluffyplayer.R
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.DbxNodeMetadata
 
 /**
  * A custom adapter of ListView to show Dropbox files.

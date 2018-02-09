@@ -5,7 +5,7 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_DBX_USER_NAME
 import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_LAST_FM_USER_NAME
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DependencyInjector
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.MockComponentInjector
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.DbxProxy
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.AppPrefs
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelper
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.SettingsActivityViewModel
@@ -15,8 +15,6 @@ import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers
-import org.mockito.ArgumentMatchers.*
 import org.mockito.Mockito.*
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment

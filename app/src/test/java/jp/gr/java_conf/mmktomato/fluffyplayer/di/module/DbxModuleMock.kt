@@ -6,11 +6,10 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_DBX_FILE_NAME
 import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_DBX_FILE_PATH
 import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_DBX_USER_NAME
 import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_MUSIC_URI
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.DbxNodeMetadata
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.DbxProxy
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelper
 import kotlinx.coroutines.experimental.async
-import org.mockito.ArgumentMatchers.*
 import org.mockito.Mockito.*
 import javax.inject.Named
 
