@@ -6,6 +6,7 @@ import android.content.Intent
 import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.widget.Button
+import de.umass.lastfm.scrobble.ScrobbleResult
 import jp.gr.java_conf.mmktomato.fluffyplayer.*
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DaggerPlayerActivityPresenterTestComponent
@@ -29,9 +30,10 @@ import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.ArgumentMatchers.*
 import org.mockito.Mockito.*
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
+import org.robolectric.shadows.ShadowToast
 import javax.inject.Inject
 import javax.inject.Named
 
@@ -241,6 +243,9 @@ class PlayerActivityPresenterTest {
         assertEquals(PlaylistItem.Status.PLAYING.value, presenter.nowPlayingItem!!.status.value)
 
         verify(player, times(1)).start()
+
+        val expectedMetadata = createDummyMusicMetadata()
+        verify(presenter.scrobbleUseCase, times(1)).scrobble(MockitoWorkaround.eq(createDummyMusicMetadata()))
     }
 
     @Test
@@ -302,7 +307,7 @@ class PlayerActivityPresenterTest {
     @Test
     fun getMusicUri() {
         runBlocking {
-            val uri = presenter.getMusicUri().await()
+            val uri = presenter.getMusicUri(DUMMY_DBX_FILE_PATH).await()
 
             assertEquals(DUMMY_MUSIC_URI, uri)
         }
@@ -315,5 +320,45 @@ class PlayerActivityPresenterTest {
         assertEquals(ctx.getString(R.string.now_loading_text), viewModel.title.get())
         assertEquals(ctx.resources.getDrawable(R.drawable.ic_no_image, null), viewModel.artwork.get())
         assertFalse(viewModel.isPlaying.get())
+    }
+
+    @Test
+    fun handleScrobbleResult_Null() {
+        presenter.handleScrobbleResult(null)
+
+        assertNull(ShadowToast.getLatestToast())
+    }
+
+    @Test
+    fun handleScrobbleResult_Successful() {
+        val result = mock(ScrobbleResult::class.java)
+        `when`(result.isSuccessful).thenReturn(true)
+        `when`(result.isIgnored).thenReturn(false)
+
+        presenter.handleScrobbleResult(result)
+
+        assertNull(ShadowToast.getLatestToast())
+    }
+
+    @Test
+    fun handleScrobbleResult_NowSuccessful() {
+        val result = mock(ScrobbleResult::class.java)
+        `when`(result.isSuccessful).thenReturn(false)
+        `when`(result.isIgnored).thenReturn(false)
+
+        presenter.handleScrobbleResult(result)
+
+        assertEquals(ctx.getString(R.string.last_fm_failure), ShadowToast.getTextOfLatestToast())
+    }
+
+    @Test
+    fun handleScrobbleResult_Ignored() {
+        val result = mock(ScrobbleResult::class.java)
+        `when`(result.isSuccessful).thenReturn(true)
+        `when`(result.isIgnored).thenReturn(true)
+
+        presenter.handleScrobbleResult(result)
+
+        assertEquals(ctx.getString(R.string.last_fm_failure), ShadowToast.getTextOfLatestToast())
     }
 }
