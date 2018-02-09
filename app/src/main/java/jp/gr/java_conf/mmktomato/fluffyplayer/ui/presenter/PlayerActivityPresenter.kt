@@ -1,6 +1,5 @@
 package jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter
 
-import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
@@ -8,16 +7,19 @@ import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
 import android.os.IBinder
 import android.widget.Button
+import android.widget.Toast
+import de.umass.lastfm.scrobble.ScrobbleResult
 import jp.gr.java_conf.mmktomato.fluffyplayer.R
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.AppDatabase
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.DbxNodeMetadata
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.DbxProxy
 import jp.gr.java_conf.mmktomato.fluffyplayer.entity.MusicMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceBinder
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceState
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.PlayerActivityViewModel
 import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.NotificationUseCase
+import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.ScrobbleUseCase
 import kotlinx.coroutines.experimental.*
 import java.io.ByteArrayInputStream
 import java.util.*
@@ -28,6 +30,11 @@ import javax.inject.Inject
  */
 internal interface PlayerActivityPresenter {
     /**
+     * An android's Context.
+     */
+    val ctx: Context
+
+    /**
      * the database.
      */
     var db: AppDatabase
@@ -36,6 +43,11 @@ internal interface PlayerActivityPresenter {
      * the NotificationUseCase.
      */
     var notificationUseCase: NotificationUseCase
+
+    /**
+     * the ScrobbleUseCase.
+     */
+    var scrobbleUseCase: ScrobbleUseCase
 
     /**
      * the view model of this activity.
@@ -109,7 +121,7 @@ internal interface PlayerActivityPresenter {
 
         onPlayerStateChanged()
 
-        val musicUri = getMusicUri().await()
+        val musicUri = getMusicUri(nowPlayingItem!!.path).await()
 
         when (svcState.binder.isPlaying) {
             true ->  startRefreshUI(musicUri)
@@ -158,6 +170,9 @@ internal interface PlayerActivityPresenter {
         notificationUseCase.updateNowPlayingNotification(
                 nowPlayingItem!!,
                 musicMetadata.title ?: getString(R.string.unknown_music_title))
+
+        val result = scrobbleUseCase.updateNowPlaying(musicMetadata)
+        handleScrobbleResult(result)
     }
 
     /**
@@ -186,8 +201,10 @@ internal interface PlayerActivityPresenter {
 
     /**
      * Returns the music uri.
+     *
+     * @param dbxPath the dropbox path.
      */
-    fun getMusicUri(): Deferred<String>
+    fun getMusicUri(dbxPath: String): Deferred<String>
 
     /**
      * Resets UI Components.
@@ -195,9 +212,25 @@ internal interface PlayerActivityPresenter {
     fun resetUI() {
         setMusicMetadata(MusicMetadata(
                 title = getString(R.string.now_loading_text),
-                artwork = noArtworkImage))
+                artist = "",
+                duration = -1,
+                trackNumber = -1,
+                artwork = noArtworkImage,
+                albumTitle = "",
+                albumArtist = ""))
 
         viewModel.isPlaying.set(false)
+    }
+
+    /**
+     * Handles result of scrobble.
+     *
+     * @param result an instance of ScrobbleResult.
+     */
+    fun handleScrobbleResult(result: ScrobbleResult?) {
+        if (result != null && (!result.isSuccessful || result.isIgnored)) {
+            Toast.makeText(ctx, R.string.last_fm_failure, Toast.LENGTH_SHORT).show()
+        }
     }
 
     /**
@@ -238,7 +271,7 @@ class PlayerActivityPresenterImpl(
      * An android's Context.
      */
     @Inject
-    lateinit var ctx: Context
+    override lateinit var ctx: Context
 
     /**
      * A DbxProxy.
@@ -255,6 +288,11 @@ class PlayerActivityPresenterImpl(
      * the NotificationUseCase.
      */
     override lateinit var notificationUseCase: NotificationUseCase
+
+    /**
+     * the ScrobbleUseCase.
+     */
+    override lateinit var scrobbleUseCase: ScrobbleUseCase
 
     /**
      * the player service state.
@@ -307,6 +345,11 @@ class PlayerActivityPresenterImpl(
         nowPlayingItem!!.status = PlaylistItem.Status.PLAYED
         db.playlistDao.update(nowPlayingItem!!)
 
+        val musicUri = getMusicUri(nowPlayingItem!!.path).await()  // TODO: cache this.
+        val metadata = getMusicMetadata(musicUri).await()  // TODO: cache this.
+        val result = scrobbleUseCase.scrobble(metadata)
+        handleScrobbleResult(result)
+
         val nextItem = db.playlistDao.getNext()
         if (nextItem != null) {
             nextItem.status = PlaylistItem.Status.PLAYING
@@ -314,8 +357,8 @@ class PlayerActivityPresenterImpl(
             nowPlayingItem = nextItem
             db.playlistDao.update(nowPlayingItem!!)
 
-            val musicUri = getMusicUri().await()
-            startMusicWithRefreshUi(musicUri).join()
+            val nextMusicUri = getMusicUri(nowPlayingItem!!.path).await()
+            startMusicWithRefreshUi(nextMusicUri).join()
         }
     }
 
@@ -326,7 +369,16 @@ class PlayerActivityPresenterImpl(
         mediaMetadataRetriever.setDataSource(uri, mapOf<String, String>())
 
         // title
-        val title = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+        val title = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE) ?: ""
+
+        // artist
+        val artist = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST) ?: ""
+
+        // duration
+        val duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION).toIntOrNull() ?: -1
+
+        // track number
+        val trackNumber = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER).toIntOrNull() ?: -1
 
         // artwork
         val artworkBytes: ByteArray? = mediaMetadataRetriever.embeddedPicture
@@ -338,14 +390,29 @@ class PlayerActivityPresenterImpl(
             }
         }
 
-        return@async MusicMetadata(title, artworkDrawable)
+        // album title
+        val albumTitle = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM) ?: ""
+
+        // album artist
+        val albumArtist = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST) ?: ""
+
+        return@async MusicMetadata(
+                title = title,
+                artist = artist,
+                duration = duration,
+                trackNumber = trackNumber,
+                artwork = artworkDrawable,
+                albumTitle = albumTitle,
+                albumArtist = albumArtist)
     }
 
     /**
      * Returns a music uri.
+     *
+     * @param dbxPath a dropbox path.
      */
-    override fun getMusicUri(): Deferred<String> {
-        return dbxProxy.getTemporaryLink(nowPlayingItem!!.path)
+    override fun getMusicUri(dbxPath: String): Deferred<String> {
+        return dbxProxy.getTemporaryLink(dbxPath)
     }
 
     /**

@@ -22,10 +22,12 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toBottomOf="parent">
 
+            <!-- Dropbox -->
             <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:layout_margin="15dp"
+                android:layout_height="@dimen/activity_settings__item_height"
+                android:layout_marginHorizontal="@dimen/activity_settings__item_margin_horizontal"
+                android:layout_marginVertical="@dimen/activity_settings__item_margin_vertical"
                 android:orientation="horizontal">
 
                 <TextView
@@ -50,6 +52,66 @@
                     android:text="@{viewModel.connectDropboxButtonText}"
                     android:layout_alignParentRight="true"/>
             </RelativeLayout>
+
+            <!-- Last.fm -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/activity_settings__item_margin_horizontal"
+                android:layout_marginVertical="@dimen/activity_settings__item_margin_vertical"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Last.fm"/>
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/activity_settings__item_height"
+                    android:layout_marginHorizontal="@dimen/activity_settings__item_margin_horizontal"
+                    android:layout_marginVertical="@dimen/activity_settings__item_margin_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:text="User Name"
+                        android:gravity="center_vertical"/>
+
+                    <EditText
+                        android:id="@+id/lastFmUserNameText"
+                        android:layout_width="@dimen/activity_settings__edit_width"
+                        android:layout_height="match_parent"
+                        android:text="@={viewModel.lastFmUserNameText}"
+                        android:gravity="center_vertical"
+                        android:layout_alignParentRight="true"
+                        android:inputType="text"/>
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/activity_settings__item_height"
+                    android:layout_marginHorizontal="@dimen/activity_settings__item_margin_horizontal"
+                    android:layout_marginVertical="@dimen/activity_settings__item_margin_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:text="Password"
+                        android:gravity="center_vertical"/>
+
+                    <EditText
+                        android:id="@+id/lastFmPasswordText"
+                        android:layout_width="@dimen/activity_settings__edit_width"
+                        android:layout_height="match_parent"
+                        android:text="@={viewModel.lastFmPasswordText}"
+                        android:gravity="center_vertical"
+                        android:layout_alignParentRight="true"
+                        android:inputType="textPassword"/>
+                </RelativeLayout>
+            </LinearLayout>
 
         </LinearLayout>
     </android.support.constraint.ConstraintLayout>

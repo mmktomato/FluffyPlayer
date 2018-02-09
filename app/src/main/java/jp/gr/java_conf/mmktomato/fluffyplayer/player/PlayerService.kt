@@ -9,7 +9,7 @@ import android.util.Log
 import jp.gr.java_conf.mmktomato.fluffyplayer.R
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DependencyInjector
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.DbxNodeMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.AppPrefs
 import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.NotificationUseCase
 

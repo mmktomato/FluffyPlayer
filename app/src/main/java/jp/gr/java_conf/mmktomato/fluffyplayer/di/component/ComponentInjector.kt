@@ -4,11 +4,12 @@ import android.content.Context
 import jp.gr.java_conf.mmktomato.fluffyplayer.ActivityBase
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.AppDatabase
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.*
-import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.FileBrowseActivityPresenterImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.PlayerActivityPresenterImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.SettingsActivityPresenterImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.NotificationUseCase
+import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.ScrobbleUseCase
+import kotlinx.coroutines.experimental.async
 
 /**
  * Injects depedencies.
@@ -18,6 +19,11 @@ abstract class ComponentInjector {
      * the DatabaseComponent.
      */
     protected lateinit var dbComponent: DatabaseComponent
+
+    /**
+     * the ScrobbleComponent.
+     */
+    protected lateinit var scrobbleComponent: ScrobbleComponent
 
     /**
      * Inject to ActivityBase.
@@ -55,7 +61,7 @@ abstract class ComponentInjector {
      * @param presenter the instance to inject dependencies.
      * @param ctx android's Context.
      */
-    open fun inject(presenter: PlayerActivityPresenterImpl, ctx: Context) {
+    open suspend fun inject(presenter: PlayerActivityPresenterImpl, ctx: Context) {
         DaggerActivityPresenterComponent.builder()
                 .appModule(AppModule(ctx))
                 .sharedPrefsModule(SharedPrefsModule())
@@ -65,6 +71,7 @@ abstract class ComponentInjector {
 
         presenter.db = createAppDatabase(ctx)
         presenter.notificationUseCase = createNotificationUseCase(ctx)
+        presenter.scrobbleUseCase = createScrobbleUseCase(ctx).await()
     }
 
     /**
@@ -108,6 +115,31 @@ abstract class ComponentInjector {
                 .notificationModule(NotificationModule())
                 .build()
                 .createNotificationUseCase()
+    }
+
+    /**
+     * Returns an instance of ScrobbleComponent.
+     *
+     * @param ctx android's Context.
+     */
+    open fun createScrobbleUseCase(ctx: Context) = async {
+        return@async if (::scrobbleComponent.isInitialized) {
+            scrobbleComponent.createScrobbleUseCase()
+        }
+        else {
+            val component = DaggerScrobbleComponent.builder()
+                    .appModule(AppModule(ctx))
+                    .sharedPrefsModule(SharedPrefsModule())
+                    .scrobbleModule(ScrobbleModule())
+                    .build()
+            val ret = component.createScrobbleUseCase()
+
+            if (ret.isValid) {
+                scrobbleComponent = component  // make component singleton.
+            }
+
+            ret
+        }
     }
 }
 

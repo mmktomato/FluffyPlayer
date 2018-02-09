@@ -3,7 +3,7 @@ package jp.gr.java_conf.mmktomato.fluffyplayer
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DependencyInjector
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.DbxProxy
 import javax.inject.Inject
 
 /**

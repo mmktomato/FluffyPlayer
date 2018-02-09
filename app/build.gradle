@@ -20,9 +20,14 @@ android {
     buildTypes {
         debug {
             buildConfigField "String", "FLUFFY_PLAYER_DBX_APP_KEY", "\"${project.property("fluffyPlayerDbxAppKey")}\""
+            buildConfigField "String", "FLUFFY_PLAYER_LAST_FM_APP_KEY", "\"${project.property("fluffyPlayerLastFmAppKey")}\""
+            buildConfigField "String", "FLUFFY_PLAYER_LAST_FM_SECRET", "\"${project.property("fluffyPlayerLastFmSecret")}\""
         }
         release {
             buildConfigField "String", "FLUFFY_PLAYER_DBX_APP_KEY", "\"${project.property("fluffyPlayerDbxAppKey")}\""
+            buildConfigField "String", "FLUFFY_PLAYER_LAST_FM_APP_KEY", "\"${project.property("fluffyPlayerLastFmAppKey")}\""
+            buildConfigField "String", "FLUFFY_PLAYER_LAST_FM_SECRET", "\"${project.property("fluffyPlayerLastFmSecret")}\""
+            
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
@@ -62,4 +67,6 @@ dependencies {
 
     implementation "android.arch.persistence.room:runtime:1.0.0"
     kapt "android.arch.persistence.room:compiler:1.0.0"
+
+    compile "de.u-mass:lastfm-java:0.1.2"
 }

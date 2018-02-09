@@ -6,10 +6,8 @@ import android.content.Intent
 import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.widget.Button
-import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_DBX_FILE_PATH
-import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_MUSIC_TITLE
-import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_MUSIC_URI
-import jp.gr.java_conf.mmktomato.fluffyplayer.R
+import de.umass.lastfm.scrobble.ScrobbleResult
+import jp.gr.java_conf.mmktomato.fluffyplayer.*
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DaggerPlayerActivityPresenterTestComponent
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DependencyInjector
@@ -18,8 +16,8 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.AppModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.DbxModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.PlayerModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.SharedPrefsModuleMock
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxProxy
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.DbxNodeMetadata
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.DbxProxy
 import jp.gr.java_conf.mmktomato.fluffyplayer.entity.MusicMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceBinder
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceState
@@ -34,7 +32,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.*
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
+import org.robolectric.shadows.ShadowToast
 import javax.inject.Inject
 import javax.inject.Named
 
@@ -111,9 +109,9 @@ class PlayerActivityPresenterTest {
                 resources = ctx.resources,
                 mediaMetadataRetriever = mediaMetadataRetriever)
 
-        DependencyInjector.injector.inject(presenter as PlayerActivityPresenterImpl, ctx)
-
         runBlocking {
+            DependencyInjector.injector.inject(presenter as PlayerActivityPresenterImpl, ctx)
+
             presenter.onCreate().join()
         }
     }
@@ -130,6 +128,23 @@ class PlayerActivityPresenterTest {
                 isBound = isBound,
                 onMusicFinished = { },
                 onPlayerStateChangedListener = { })
+    }
+
+    /**
+     * Returns a dummy music metadata.
+     */
+    private fun createDummyMusicMetadata(): MusicMetadata {
+        // TODO: this is duplicated with ScrobbleUseCateTest#createMusicMetadata.
+
+        val artwork = ctx.resources.getDrawable(R.drawable.ic_no_image, null)
+        return MusicMetadata(
+                title = DUMMY_MUSIC_TITLE,
+                artist = DUMMY_MUSIC_ARTIST,
+                duration = DUMMY_MUSIC_DURATION,
+                trackNumber = DUMMY_MUSIC_TRACK_NUMBER,
+                artwork = artwork,
+                albumTitle = DUMMY_ALBUM_TITLE,
+                albumArtist = DUMMY_ALBUM_ARTIST)
     }
 
     @Test
@@ -227,6 +242,9 @@ class PlayerActivityPresenterTest {
         assertEquals(PlaylistItem.Status.PLAYING.value, presenter.nowPlayingItem!!.status.value)
 
         verify(player, times(1)).start()
+
+        val expectedMetadata = createDummyMusicMetadata()
+        verify(presenter.scrobbleUseCase, times(1)).scrobble(MockitoWorkaround.eq(createDummyMusicMetadata()))
     }
 
     @Test
@@ -251,6 +269,9 @@ class PlayerActivityPresenterTest {
         verify(presenter.notificationUseCase.notificationManager, times(1)).notify(eq(AppPrefs.NOW_PLAYING_NOTIFICATION_ID), any(Notification::class.java))
         verify(player, times(1)).start()
         assertEquals(PlaylistItem.Status.PLAYING, presenter.nowPlayingItem!!.status)
+
+        val expectedMetadata = createDummyMusicMetadata()
+        verify(presenter.scrobbleUseCase, times(1)).updateNowPlaying(MockitoWorkaround.eq(expectedMetadata))
     }
 
     @Test
@@ -266,26 +287,26 @@ class PlayerActivityPresenterTest {
     fun getMusicMetadata() {
         runBlocking {
             val metadata = presenter.getMusicMetadata(DUMMY_MUSIC_URI).await()
+            val expected = createDummyMusicMetadata()
 
-            assertEquals(DUMMY_MUSIC_TITLE, metadata.title)
+            assertEquals(expected, metadata)
         }
     }
 
     @Test
     fun setMusicMetadata() {
-        val artwork = ctx.resources.getDrawable(R.drawable.ic_no_image, null)
-        val metadata = MusicMetadata(DUMMY_MUSIC_TITLE, artwork)
+        val metadata = createDummyMusicMetadata()
 
         presenter.setMusicMetadata(metadata)
 
         assertEquals(DUMMY_MUSIC_TITLE, viewModel.title.get())
-        assertEquals(artwork, viewModel.artwork.get())
+        assertEquals(metadata.artwork, viewModel.artwork.get())
     }
 
     @Test
     fun getMusicUri() {
         runBlocking {
-            val uri = presenter.getMusicUri().await()
+            val uri = presenter.getMusicUri(DUMMY_DBX_FILE_PATH).await()
 
             assertEquals(DUMMY_MUSIC_URI, uri)
         }
@@ -298,5 +319,45 @@ class PlayerActivityPresenterTest {
         assertEquals(ctx.getString(R.string.now_loading_text), viewModel.title.get())
         assertEquals(ctx.resources.getDrawable(R.drawable.ic_no_image, null), viewModel.artwork.get())
         assertFalse(viewModel.isPlaying.get())
+    }
+
+    @Test
+    fun handleScrobbleResult_Null() {
+        presenter.handleScrobbleResult(null)
+
+        assertNull(ShadowToast.getLatestToast())
+    }
+
+    @Test
+    fun handleScrobbleResult_Successful() {
+        val result = mock(ScrobbleResult::class.java)
+        `when`(result.isSuccessful).thenReturn(true)
+        `when`(result.isIgnored).thenReturn(false)
+
+        presenter.handleScrobbleResult(result)
+
+        assertNull(ShadowToast.getLatestToast())
+    }
+
+    @Test
+    fun handleScrobbleResult_NowSuccessful() {
+        val result = mock(ScrobbleResult::class.java)
+        `when`(result.isSuccessful).thenReturn(false)
+        `when`(result.isIgnored).thenReturn(false)
+
+        presenter.handleScrobbleResult(result)
+
+        assertEquals(ctx.getString(R.string.last_fm_failure), ShadowToast.getTextOfLatestToast())
+    }
+
+    @Test
+    fun handleScrobbleResult_Ignored() {
+        val result = mock(ScrobbleResult::class.java)
+        `when`(result.isSuccessful).thenReturn(true)
+        `when`(result.isIgnored).thenReturn(true)
+
+        presenter.handleScrobbleResult(result)
+
+        assertEquals(ctx.getString(R.string.last_fm_failure), ShadowToast.getTextOfLatestToast())
     }
 }

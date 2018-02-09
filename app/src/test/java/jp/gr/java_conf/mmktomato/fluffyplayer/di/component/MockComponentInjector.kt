@@ -9,6 +9,7 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.FileBrowseActivityPre
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.PlayerActivityPresenterImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.SettingsActivityPresenterImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.NotificationUseCase
+import kotlinx.coroutines.experimental.async
 
 /**
  * Inject mocks.
@@ -62,7 +63,7 @@ class MockComponentInjector : ComponentInjector() {
      * @param presenter the instance to inject dependencies.
      * @param ctx this argument is ignored.
      */
-    override fun inject(presenter: PlayerActivityPresenterImpl, ctx: Context) {
+    override suspend fun inject(presenter: PlayerActivityPresenterImpl, ctx: Context) {
         DaggerActivityPresenterComponentMock.builder()
                 .appModuleMock(AppModuleMock())
                 .sharedPrefsModuleMock(SharedPrefsModuleMock())
@@ -72,6 +73,7 @@ class MockComponentInjector : ComponentInjector() {
 
         presenter.db = createAppDatabase(ctx)
         presenter.notificationUseCase = createNotificationUseCase(ctx)
+        presenter.scrobbleUseCase = createScrobbleUseCase(ctx).await()
     }
 
     /**
@@ -113,5 +115,17 @@ class MockComponentInjector : ComponentInjector() {
                 .notificationModuleMock(NotificationModuleMock())
                 .build()
                 .createNotificationUseCaseMock()
+    }
+
+    /**
+     * Returns an instance of ScrobbleComponent.
+     *
+     * @param ctx this argument is ignored.
+     */
+    override fun createScrobbleUseCase(ctx: Context) = async {
+        return@async DaggerScrobbleComponentMock.builder()
+                .scrobbleModuleMock(ScrobbleModuleMock())
+                .build()
+                .createScrobbleUseCaseMock()
     }
 }
