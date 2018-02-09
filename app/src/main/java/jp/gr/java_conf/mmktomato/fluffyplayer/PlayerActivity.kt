@@ -12,7 +12,7 @@ import android.widget.Button
 import jp.gr.java_conf.mmktomato.fluffyplayer.databinding.ActivityPlayerBinding
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DependencyInjector
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.DbxNodeMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.PlayerActivityPresenter
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter.PlayerActivityPresenterImpl

@@ -9,9 +9,6 @@ import android.support.v4.app.NotificationCompat
 import jp.gr.java_conf.mmktomato.fluffyplayer.PlayerActivity
 import jp.gr.java_conf.mmktomato.fluffyplayer.R
 import jp.gr.java_conf.mmktomato.fluffyplayer.db.model.PlaylistItem
-import jp.gr.java_conf.mmktomato.fluffyplayer.dropbox.DbxNodeMetadata
-import jp.gr.java_conf.mmktomato.fluffyplayer.entity.MusicMetadata
-import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerService
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.AppPrefs
 import javax.inject.Inject
 

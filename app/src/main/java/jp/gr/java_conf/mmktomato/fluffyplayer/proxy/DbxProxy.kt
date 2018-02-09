@@ -1,4 +1,4 @@
-package jp.gr.java_conf.mmktomato.fluffyplayer.dropbox
+package jp.gr.java_conf.mmktomato.fluffyplayer.proxy
 
 import android.content.Context
 import com.dropbox.core.DbxRequestConfig

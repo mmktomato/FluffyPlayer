@@ -8,6 +8,7 @@ import de.umass.lastfm.Caller
 import de.umass.lastfm.cache.FileSystemCache
 import jp.gr.java_conf.mmktomato.fluffyplayer.BuildConfig
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelper
+import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.LastFmProxy
 import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.InvalidScrobbleUseCaseImpl
 import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.ScrobbleUseCase
 import jp.gr.java_conf.mmktomato.fluffyplayer.usecase.ScrobbleUseCaseImpl
@@ -23,17 +24,13 @@ class ScrobbleModule {
             InvalidScrobbleUseCaseImpl()
         }
         else {
-            Caller.getInstance().cache = FileSystemCache(File(ctx.cacheDir, "lastFmCache"))
+            val proxy = LastFmProxy()
 
-            val session = Authenticator.getMobileSession(
-                    sharedPrefs.lastFmUserName,
-                    sharedPrefs.lastFmPasswordDigest,
-                    BuildConfig.FLUFFY_PLAYER_LAST_FM_APP_KEY,
-                    BuildConfig.FLUFFY_PLAYER_LAST_FM_SECRET)
+            proxy.initializeGlobalCache(ctx)
 
-            // TODO: session is null when credential is not valid.
+            val session = proxy.getMobileSession(sharedPrefs.lastFmUserName, sharedPrefs.lastFmPasswordDigest)
 
-            ScrobbleUseCaseImpl(session)
+            ScrobbleUseCaseImpl(session!!, proxy)  // TODO: session is null when credential is not valid.
         }
     }
 }
