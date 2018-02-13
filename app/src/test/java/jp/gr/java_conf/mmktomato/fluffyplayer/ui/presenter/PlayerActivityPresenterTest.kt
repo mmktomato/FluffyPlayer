@@ -15,14 +15,11 @@ import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.MockComponentInjector
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.AppModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.DbxModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.PlayerModuleMock
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.SharedPrefsModuleMock
 import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.DbxNodeMetadata
-import jp.gr.java_conf.mmktomato.fluffyplayer.proxy.DbxProxy
 import jp.gr.java_conf.mmktomato.fluffyplayer.entity.MusicMetadata
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceBinder
 import jp.gr.java_conf.mmktomato.fluffyplayer.player.PlayerServiceState
 import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.AppPrefs
-import jp.gr.java_conf.mmktomato.fluffyplayer.prefs.SharedPrefsHelper
 import jp.gr.java_conf.mmktomato.fluffyplayer.ui.viewmodel.PlayerActivityViewModel
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Assert.*
@@ -31,16 +28,22 @@ import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.*
-import org.robolectric.RobolectricTestRunner
+import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.shadows.ShadowToast
 import javax.inject.Inject
 import javax.inject.Named
 
 /**
  * Tests for PlayerActivityPresenter.
+ *
+ * @param isPlaying whether player is playing music.
+ * @param isBound whether PlayerServiceState is bound to PlayerService.
  */
-@RunWith(RobolectricTestRunner::class)
-class PlayerActivityPresenterTest {
+@RunWith(ParameterizedRobolectricTestRunner::class)
+class PlayerActivityPresenterTest(
+        private val isPlaying: Boolean,
+        private val isBound: Boolean) {
+
     private interface CallbackHolder {
         fun startService(playerServiceIntent: Intent)
         fun bindService(playerServiceIntent: Intent)
@@ -49,12 +52,6 @@ class PlayerActivityPresenterTest {
 
     @Inject
     lateinit var ctx: Context
-
-    @Inject
-    lateinit var sharedPrefs: SharedPrefsHelper
-
-    @Inject
-    lateinit var dbxProxy: DbxProxy
 
     @Inject
     @field:Named("FileArray")
@@ -81,15 +78,24 @@ class PlayerActivityPresenterTest {
         fun setUpClass() {
             MockComponentInjector.setTestMode()
         }
+
+        @ParameterizedRobolectricTestRunner.Parameters(name = "player#isPlaying = {0}, svcState#isBound = {1}")
+        @JvmStatic
+        fun testParams(): List<Array<out Boolean>> {
+            return listOf(
+                    arrayOf(true, true),
+                    arrayOf(true, false),
+                    arrayOf(false, true),
+                    arrayOf(false, false))
+        }
     }
 
     @Before
     fun setUp() {
         DaggerPlayerActivityPresenterTestComponent.builder()
                 .appModuleMock(AppModuleMock())
-                .sharedPrefsModuleMock(SharedPrefsModuleMock())
                 .dbxModuleMock(DbxModuleMock(true))
-                .playerModuleMock(PlayerModuleMock(false))
+                .playerModuleMock(PlayerModuleMock(isPlaying))
                 .build()
                 .inject(this)
 
@@ -112,16 +118,16 @@ class PlayerActivityPresenterTest {
         runBlocking {
             DependencyInjector.injector.inject(presenter as PlayerActivityPresenterImpl, ctx)
 
+            `when`(player.isPlaying).thenReturn(isPlaying)
+
             presenter.onCreate().join()
         }
     }
 
     /**
      * Prepares dummy `presenter.svcState`.
-     *
-     * @param isBound initial value of `isBound`.
      */
-    private fun prepareDummyPlayerServiceState(isBound: Boolean) {
+    private fun prepareDummyPlayerServiceState() {
         presenter.isPlayerServiceInitialized = true
         presenter.svcState = PlayerServiceState(
                 binder = PlayerServiceBinder(player),
@@ -166,73 +172,54 @@ class PlayerActivityPresenterTest {
     }
 
     @Test
-    fun onDestroy_WhenBindedToService() {
-        prepareDummyPlayerServiceState(true)
+    fun onDestroy() {
+        prepareDummyPlayerServiceState()
 
         presenter.onDestroy()
 
-        verify(callbacks, times(1)).unbindService()
+        if (isBound) {
+            verify(callbacks, times(1)).unbindService()
+        }
+        else {
+            verify(callbacks, times(0)).unbindService()
+        }
         verify(mediaMetadataRetriever, times(1)).release()
         assertFalse(presenter.svcState.isBound)
     }
 
     @Test
-    fun onDestroy_WhenNotBindedToService() {
-        prepareDummyPlayerServiceState(false)
-
-        presenter.onDestroy()
-
-        verify(callbacks, times(0)).unbindService()
-        verify(mediaMetadataRetriever, times(1)).release()
-        assertFalse(presenter.svcState.isBound)
-    }
-
-    @Test
-    fun onPlayButtonClick_WhenPlaying() {
-        `when`(player.isPlaying).thenReturn(true)
-        prepareDummyPlayerServiceState(true)
+    fun onPlayButtonClick() {
+        //prepareDummyPlayerServiceState(true)
+        prepareDummyPlayerServiceState()
 
         presenter.onPlayButtonClick()
 
-        verify(player, times(1)).pause()
-        assertTrue(presenter.svcState.isBound)
+        if (isPlaying) {
+            verify(player, times(1)).pause()
+        }
+        else {
+            verify(player, times(1)).start()
+        }
     }
 
     @Test
-    fun onPlayButtonClick_WhenNotPlaying() {
-        prepareDummyPlayerServiceState(true)
-
-        presenter.onPlayButtonClick()
-
-        verify(player, times(1)).start()
-        assertTrue(presenter.svcState.isBound)
-    }
-
-    @Test
-    fun initializePlayerServiceState_WhenPlaying() {
-        `when`(player.isPlaying).thenReturn(true)
-
+    fun initializePlayerServiceState() {
         runBlocking {
             presenter.initializePlayerServiceState(PlayerServiceBinder(player)).join()
         }
 
-        verify(player, times(0)).start()
-        assertTrue(presenter.isPlayerServiceInitialized)
-    }
-
-    @Test
-    fun initializePlayerServiceState_WhenNotPlaying() {
-        runBlocking {
-            presenter.initializePlayerServiceState(PlayerServiceBinder(player)).join()
+        if (isPlaying) {
+            verify(player, times(0)).start()
         }
-
-        verify(player, times(1)).start()
+        else {
+            verify(player, times(1)).start()
+        }
         assertTrue(presenter.isPlayerServiceInitialized)
     }
 
     @Test
     fun onMusicFinished() {
-        prepareDummyPlayerServiceState(true)
+        prepareDummyPlayerServiceState()
 
         runBlocking {
             presenter.onMusicFinished().join()
@@ -258,7 +245,7 @@ class PlayerActivityPresenterTest {
 
     @Test
     fun startMusicWithRefreshUI() {
-        prepareDummyPlayerServiceState(true)
+        prepareDummyPlayerServiceState()
 
         runBlocking {
             presenter.startMusicWithRefreshUi(DUMMY_MUSIC_URI).join()
@@ -276,7 +263,7 @@ class PlayerActivityPresenterTest {
 
     @Test
     fun unbindPlayerServiceState() {
-        prepareDummyPlayerServiceState(true)
+        prepareDummyPlayerServiceState()
 
         presenter.unbindPlayerServiceState()
 

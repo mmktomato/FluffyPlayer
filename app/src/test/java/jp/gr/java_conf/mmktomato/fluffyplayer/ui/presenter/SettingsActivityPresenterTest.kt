@@ -2,6 +2,7 @@ package jp.gr.java_conf.mmktomato.fluffyplayer.ui.presenter
 
 import android.widget.Button
 import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_DBX_USER_NAME
+import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_LAST_FM_PASSWORD_DIGEST
 import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_LAST_FM_USER_NAME
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DependencyInjector
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.MockComponentInjector
@@ -16,14 +17,20 @@ import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.*
-import org.robolectric.RobolectricTestRunner
+import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 
 /**
  * Tests for SettingsActivityPresenter.
+ *
+ * @param dbxConnected whether is Dropbox connected.
+ * @param lastFmEnabled whether is Last.fm enabled.
  */
-@RunWith(RobolectricTestRunner::class)
-class SettingsActivityPresenterTest {
+@RunWith(ParameterizedRobolectricTestRunner::class)
+class SettingsActivityPresenterTest(
+        private val dbxConnected: Boolean,
+        private val lastFmEnabled: Boolean) {
+
     private lateinit var sharedPrefs: SharedPrefsHelper
     private lateinit var dbxProxy: DbxProxy
     private lateinit var viewModel: SettingsActivityViewModel
@@ -34,6 +41,16 @@ class SettingsActivityPresenterTest {
         @JvmStatic
         fun setUpClass() {
             MockComponentInjector.setTestMode()
+        }
+
+        @ParameterizedRobolectricTestRunner.Parameters(name = "dbxConnected = {0}, lastFmEnabled = {1}")
+        @JvmStatic
+        fun testParams(): List<Array<out Boolean>> {
+            return listOf(
+                    arrayOf(true, true),
+                    arrayOf(true, false),
+                    arrayOf(false, true),
+                    arrayOf(false, false))
         }
     }
 
@@ -47,144 +64,97 @@ class SettingsActivityPresenterTest {
                 connectDropboxButton = Button(ctx))
 
         DependencyInjector.injector.inject(presenter as SettingsActivityPresenterImpl, ctx)
-        presenter.onCreate()
 
         sharedPrefs = (presenter as SettingsActivityPresenterImpl).sharedPrefs
         dbxProxy = (presenter as SettingsActivityPresenterImpl).dbxProxy
-    }
 
-    /**
-     * Asserts values of `viewModel`.
-     */
-    private fun assertViewModel(
-            dropboxAuthStatusText: String = DUMMY_DBX_USER_NAME,
-            connectDropboxButtonText: String = "disconnect",
-            lastFmUserNameText: String = DUMMY_LAST_FM_USER_NAME,
-            lastFmPasswordText: String = AppPrefs.LAST_FM_PASSWORD_MARKER) {
+        `when`(dbxProxy.isAuthenticated).thenReturn(dbxConnected)
+        `when`(sharedPrefs.lastFmUserName).thenReturn(if (lastFmEnabled) { DUMMY_LAST_FM_USER_NAME } else { "" })
+        `when`(sharedPrefs.lastFmPasswordDigest).thenReturn(if (lastFmEnabled) { DUMMY_LAST_FM_PASSWORD_DIGEST } else { "" })
 
-        assertEquals(dropboxAuthStatusText, viewModel.dropboxAuthStatusText.get())
-        assertEquals(connectDropboxButtonText, viewModel.connectDropboxButtonText.get())
-        assertEquals(lastFmUserNameText, viewModel.lastFmUserNameText.get())
-        assertEquals(lastFmPasswordText, viewModel.lastFmPasswordText.get())
+        presenter.onCreate()
     }
 
     /**
      * Asserts values of 'viewModel` when connected to the Dropbox.
      */
     private fun assertViewModelForDbxConnected() {
-        assertViewModel(
-                dropboxAuthStatusText = DUMMY_DBX_USER_NAME,
-                connectDropboxButtonText = "disconnect")
+        assertEquals(DUMMY_DBX_USER_NAME, viewModel.dropboxAuthStatusText.get())
+        assertEquals("disconnect", viewModel.connectDropboxButtonText.get())
     }
 
     /**
      * Asserts values of `viewModel` when not connected to the Dropbox.
      */
     private fun assertViewModelForDbxNotConnected() {
-        assertViewModel(
-                dropboxAuthStatusText = "(not connected)",
-                connectDropboxButtonText = "connect")
+        assertEquals("(not connected)", viewModel.dropboxAuthStatusText.get())
+        assertEquals("connect", viewModel.connectDropboxButtonText.get())
     }
 
     /**
      * Asserts values of `viewModel` when Last.fm is enabled.
      */
     private fun assertViewModelForLastFmEnabled() {
-        assertViewModel(
-                lastFmUserNameText = DUMMY_LAST_FM_USER_NAME,
-                lastFmPasswordText = AppPrefs.LAST_FM_PASSWORD_MARKER)
+        assertEquals(DUMMY_LAST_FM_USER_NAME, viewModel.lastFmUserNameText.get())
+        assertEquals(AppPrefs.LAST_FM_PASSWORD_MARKER, viewModel.lastFmPasswordText.get())
     }
 
     /**
      * Asserts values of `viewModel` when Last.fm is not enabled.
      */
     private fun assertViewModelForLastFmNotEnabled() {
-        assertViewModel(
-                lastFmUserNameText = "",
-                lastFmPasswordText = "")
+        assertEquals("", viewModel.lastFmUserNameText.get())
+        assertEquals("", viewModel.lastFmPasswordText.get())
     }
 
     @Test
-    fun onCreate_WhenDropboxConnected() {
+    fun onCreate() {
         presenter.onCreate()
 
-        assertViewModelForDbxConnected()
-    }
-
-    @Test
-    fun onCreate_WhenDropboxNotConnected() {
-        `when`(dbxProxy.isAuthenticated).thenReturn(false)
-
-        presenter.onCreate()
-
-        assertViewModelForDbxNotConnected()
-    }
-
-    @Test
-    fun refreshUi_WhenDropboxConnected() {
-        runBlocking {
-            presenter.refreshUi().join()
-
+        if (dbxConnected) {
             assertViewModelForDbxConnected()
         }
-    }
-
-    @Test
-    fun refreshUi_WhenDropboxNotConnected() {
-        `when`(dbxProxy.isAuthenticated).thenReturn(false)
-
-        runBlocking {
-            presenter.refreshUi().join()
-
+        else {
             assertViewModelForDbxNotConnected()
         }
     }
 
     @Test
-    fun refreshUi_WhenLastFmEnabled() {
+    fun refreshUi() {
         runBlocking {
             presenter.refreshUi().join()
 
-            assertViewModelForLastFmEnabled()
+            if (dbxConnected) {
+                assertViewModelForDbxConnected()
+            }
+            else {
+                assertViewModelForDbxNotConnected()
+            }
+
+            if (lastFmEnabled) {
+                assertViewModelForLastFmEnabled()
+            }
+            else {
+                assertViewModelForLastFmNotEnabled()
+            }
         }
     }
 
     @Test
-    fun refreshUi_WhenLastFmNotEnabled() {
-        `when`(sharedPrefs.lastFmUserName).thenReturn("")
-        `when`(sharedPrefs.lastFmPasswordDigest).thenReturn("")
+    fun onConnectDropboxButtonClick() {
+        presenter.onConnectDropboxButtonClick()
 
-        runBlocking {
-            presenter.refreshUi().join()
-
-            assertViewModelForLastFmNotEnabled()
+        if (dbxConnected) {
+            verify(sharedPrefs, times(1)).removeDbxAccessToken()
         }
-    }
+        else {
+            verify(dbxProxy, times(1)).auth()
 
-    @Test
-    fun onConnectDropboxButtonClick_WhenDropboxConnected() {
-        presenter.onConnectDropboxButtonClick()
+            // resume
+            presenter.onResume()
 
-        verify(sharedPrefs, times(1)).removeDbxAccessToken()
-    }
-
-    @Test
-    fun onConnectDropboxButtonClick_WhenDropboxNotConnected() {
-        `when`(dbxProxy.isAuthenticated).thenReturn(false)
-
-        presenter.onConnectDropboxButtonClick()
-
-        verify(dbxProxy, times(1)).auth()
-    }
-
-    @Test
-    fun onConnectDropboxButtonClick_AuthAndResume() {
-        `when`(dbxProxy.isAuthenticated).thenReturn(false)
-
-        presenter.onConnectDropboxButtonClick()
-        presenter.onResume()
-
-        verify(dbxProxy, times(1)).saveAccessToken()
+            verify(dbxProxy, times(1)).saveAccessToken()
+        }
     }
 
     @Test
@@ -197,7 +167,7 @@ class SettingsActivityPresenterTest {
     }
 
     @Test
-    fun onDestroy_WhenLastFmPasswordIsEmpty() {
+    fun onDestroy_WhenLastFmPasswordIsChangedToEmpty() {
         viewModel.lastFmPasswordText.set("")
 
         presenter.onDestroy()
@@ -209,15 +179,20 @@ class SettingsActivityPresenterTest {
     fun onDestroy_WhenLastFmPasswordIsNotChanged() {
         presenter.onDestroy()
 
-        verify(sharedPrefs, times(0)).lastFmPasswordDigest = anyString()
+        if (lastFmEnabled) {
+            verify(sharedPrefs, times(0)).lastFmPasswordDigest = anyString()
+        }
+        else {
+            verify(sharedPrefs, times(1)).lastFmPasswordDigest = ""
+        }
     }
 
     @Test
-    fun onDestroy_WhenLastFmPasswordChanged() {
+    fun onDestroy_WhenLastFmPasswordIsChangedToAnyString() {
         viewModel.lastFmPasswordText.set("test")
 
         presenter.onDestroy()
 
-        verify(sharedPrefs, times(1)).lastFmPasswordDigest = anyString()
+        verify(sharedPrefs, times(1)).lastFmPasswordDigest = "098f6bcd4621d373cade4e832627b4f6" // $(md5 -s test)
     }
 }
