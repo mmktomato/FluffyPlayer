@@ -14,12 +14,11 @@ import org.mockito.Mockito.*
 import javax.inject.Named
 
 @Module
-class DbxModuleMock(private val isAuthenticated: Boolean) {
+class DbxModuleMock {
     @Provides
     fun provideDbxProxy(sharedPrefs: SharedPrefsHelper): DbxProxy {
         val dbxProxy = mock(DbxProxy::class.java)
 
-        `when`(dbxProxy.isAuthenticated).thenReturn(isAuthenticated)
         `when`(dbxProxy.getDisplayName()).thenReturn(async { DUMMY_DBX_USER_NAME })
         `when`(dbxProxy.listFolder(anyString(), any())).thenThrow(NotImplementedError())
         `when`(dbxProxy.getTemporaryLink(anyString())).thenReturn(async { DUMMY_MUSIC_URI })

@@ -2,9 +2,7 @@ package jp.gr.java_conf.mmktomato.fluffyplayer.player
 
 import android.media.MediaPlayer
 import jp.gr.java_conf.mmktomato.fluffyplayer.DUMMY_MUSIC_URI
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.DaggerPlayerServiceBinderTestComponent
 import jp.gr.java_conf.mmktomato.fluffyplayer.di.component.MockComponentInjector
-import jp.gr.java_conf.mmktomato.fluffyplayer.di.module.PlayerModuleMock
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.After
 import org.junit.Assert.*
@@ -14,7 +12,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.*
 import org.robolectric.ParameterizedRobolectricTestRunner
-import javax.inject.Inject
 
 /**
  * Tests for PlayerServiceBinder.
@@ -29,7 +26,6 @@ class PlayerServiceBinderTest(private val isPlaying: Boolean) {
         fun onMusicFinished()
     }
 
-    @Inject
     lateinit var player: MediaPlayer
 
     private lateinit var binder: PlayerServiceBinder
@@ -54,11 +50,8 @@ class PlayerServiceBinderTest(private val isPlaying: Boolean) {
 
     @Before
     fun setUp() {
-        DaggerPlayerServiceBinderTestComponent.builder()
-                //.playerModuleMock(PlayerModuleMock(false))
-                .playerModuleMock(PlayerModuleMock(isPlaying))
-                .build()
-                .inject(this)
+        player = mock(MediaPlayer::class.java)
+        `when`(player.isPlaying).thenReturn(isPlaying)
 
         binder = PlayerServiceBinder(player)
         listenerIndices = mutableListOf()

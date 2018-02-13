@@ -57,7 +57,6 @@ class PlayerActivityPresenterTest(
     @field:Named("FileArray")
     lateinit var dbxFileMetadataArray: Array<DbxNodeMetadata>
 
-    @Inject
     lateinit var player: MediaPlayer
 
     @Inject
@@ -94,12 +93,13 @@ class PlayerActivityPresenterTest(
     fun setUp() {
         DaggerPlayerActivityPresenterTestComponent.builder()
                 .appModuleMock(AppModuleMock())
-                .dbxModuleMock(DbxModuleMock(true))
-                .playerModuleMock(PlayerModuleMock(isPlaying))
+                .dbxModuleMock(DbxModuleMock())
+                .playerModuleMock(PlayerModuleMock())
                 .build()
                 .inject(this)
 
         viewModel = PlayerActivityViewModel()
+        player = mock(MediaPlayer::class.java)
         callbacks = mock(CallbackHolder::class.java)
         playerServiceIntent = Intent()
         presenter = PlayerActivityPresenterImpl(

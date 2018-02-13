@@ -34,7 +34,7 @@ class MockComponentInjector : ComponentInjector() {
         DaggerActivityBaseComponentMock.builder()
                 .appModuleMock(AppModuleMock())
                 .sharedPrefsModuleMock(SharedPrefsModuleMock())
-                .dbxModuleMock(DbxModuleMock(true))
+                .dbxModuleMock(DbxModuleMock())
                 .build()
                 .inject(activityBase)
     }
@@ -67,7 +67,7 @@ class MockComponentInjector : ComponentInjector() {
         DaggerActivityPresenterComponentMock.builder()
                 .appModuleMock(AppModuleMock())
                 .sharedPrefsModuleMock(SharedPrefsModuleMock())
-                .dbxModuleMock(DbxModuleMock(true))
+                .dbxModuleMock(DbxModuleMock())
                 .build()
                 .inject(presenter)
 
@@ -86,7 +86,7 @@ class MockComponentInjector : ComponentInjector() {
         DaggerActivityPresenterComponentMock.builder()
                 .appModuleMock(AppModuleMock())
                 .sharedPrefsModuleMock(SharedPrefsModuleMock())
-                .dbxModuleMock(DbxModuleMock(true))
+                .dbxModuleMock(DbxModuleMock())
                 .build()
                 .inject(presenter)
     }

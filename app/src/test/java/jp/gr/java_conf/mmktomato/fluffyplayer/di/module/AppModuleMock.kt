@@ -6,7 +6,7 @@ import dagger.Provides
 import org.robolectric.RuntimeEnvironment
 
 @Module
-class AppModuleMock() {
+class AppModuleMock {
     @Provides
     fun provideContext(): Context {
         return RuntimeEnvironment.application
