@@ -11,14 +11,19 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mockito.Mockito.*
+import org.robolectric.ParameterizedRobolectricTestRunner
 import javax.inject.Inject
 
 /**
  * Tests for PlayerServiceBinder.
+ *
+ * @param isPlaying whether the player is playing music.
  */
-//@RunWith(RobolectricTestRunner::class)
-class PlayerServiceBinderTest {
+@RunWith(ParameterizedRobolectricTestRunner::class)
+class PlayerServiceBinderTest(private val isPlaying: Boolean) {
+
     private interface CallbackHolder {
         fun onPlayerStateChagned()
         fun onMusicFinished()
@@ -39,20 +44,27 @@ class PlayerServiceBinderTest {
         fun setUpClass() {
             MockComponentInjector.setTestMode()
         }
+
+        @ParameterizedRobolectricTestRunner.Parameters(name = "player#isPlaying = {0}")
+        @JvmStatic
+        fun isPlayingParams(): List<Array<out Boolean>> {
+            return listOf(arrayOf(true), arrayOf(false))
+        }
     }
 
     @Before
     fun setUp() {
         DaggerPlayerServiceBinderTestComponent.builder()
-                .playerModuleMock(PlayerModuleMock(false))
+                //.playerModuleMock(PlayerModuleMock(false))
+                .playerModuleMock(PlayerModuleMock(isPlaying))
                 .build()
                 .inject(this)
 
         binder = PlayerServiceBinder(player)
         listenerIndices = mutableListOf()
         callbacks = mock(CallbackHolder::class.java)
-        binder.addOnPlayerStateChangedListener(callbacks::onPlayerStateChagned)
-        binder.addOnMusicFinishedListener(callbacks::onMusicFinished)
+        listenerIndices.add(binder.addOnPlayerStateChangedListener(callbacks::onPlayerStateChagned))
+        listenerIndices.add(binder.addOnMusicFinishedListener(callbacks::onMusicFinished))
     }
 
     @After
@@ -100,18 +112,14 @@ class PlayerServiceBinderTest {
     }
 
     @Test
-    fun togglePlaying_WhenNotPlaying() {
+    fun togglePlaying() {
         binder.togglePlaying()
 
-        verify(player, times(1)).start()
-    }
-
-    @Test
-    fun togglePlaying_WhenPlaying() {
-        `when`(player.isPlaying).thenReturn(true)
-
-        binder.togglePlaying()
-
-        verify(player, times(1)).pause()
+        if (isPlaying) {
+            verify(player, times(1)).pause()
+        }
+        else {
+            verify(player, times(1)).start()
+        }
     }
 }
