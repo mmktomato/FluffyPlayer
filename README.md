@@ -11,7 +11,7 @@ $ echo 'fluffyPlayerDbxAppKey=<YOUR DROPBOX API KEY>' >> ~/.gradle/gradle.proper
 ## Last.fm API Key
 
 ```bash
-$ echo 'fluffyPlayerLastFmAppKey'=<YOUR LAST.FM API KEY>' >> ~/.gradle/gradle.properties
-$ echo 'fluffyPlayerLastFmSecret'=<YOUR LAST.FM SECRET>' >> ~/.gradle/gradle.properties
+$ echo 'fluffyPlayerLastFmAppKey=<YOUR LAST.FM API KEY>' >> ~/.gradle/gradle.properties
+$ echo 'fluffyPlayerLastFmSecret=<YOUR LAST.FM SECRET>' >> ~/.gradle/gradle.properties
 ```
 
